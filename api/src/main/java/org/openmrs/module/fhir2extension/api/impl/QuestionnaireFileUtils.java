@@ -23,7 +23,7 @@ public class QuestionnaireFileUtils {
 	}
 	
 	public static List<Questionnaire> getAllQuestionnaires(String questionnairesFolder) {
-        notNull(questionnairesFolder, "The questionnaires folder is note set");
+        notNull(questionnairesFolder, "The questionnaires folder is not set");
         File folder = new File(questionnairesFolder);
         if (folder.isDirectory()){
             return Arrays.stream(folder.listFiles()).map(file -> getQuestionnaireByFilename(questionnairesFolder, file.getName())).collect(Collectors.toList());
@@ -32,7 +32,7 @@ public class QuestionnaireFileUtils {
     }
 	
 	private static Questionnaire getQuestionnaireByFilename(String questionnairesFolder, String fileName) {
-        notNull(questionnairesFolder, "The questionnaires folder is note set");
+        notNull(questionnairesFolder, "The questionnaires folder is not set");
         Questionnaire questionnaire = null;
         String filePath = questionnairesFolder + fileName;
         try (FileReader reader = new FileReader(filePath)) {
