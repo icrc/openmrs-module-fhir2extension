@@ -22,7 +22,7 @@
         <junitVersion>4.13.2</junitVersion>
         <lombokVersion>1.18.34</lombokVersion>
         <mockitoVersion>3.2.4</mockitoVersion>
-        <powerMockVersion>2.0.4</powerMockVersion>
+        <powerMockVersion>2.0.9</powerMockVersion>
     </properties>
 
 
