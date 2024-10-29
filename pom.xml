@@ -25,11 +25,32 @@
         <powerMockVersion>2.0.9</powerMockVersion>
     </properties>
 
+    <url>https://github.com/icrc/openmrs-module-patientgrid</url>
+
+    <developers>
+        <developer>
+            <name>ICRC</name>
+        </developer>
+    </developers>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/icrc/openmrs-module-fhir2extension</url>
+        </repository>
+    </distributionManagement>
+
+    <organization>
+        <name>ICRC</name>
+        <url>https://www.icrc.org/</url>
+    </organization>
+
 
     <scm>
-        <connection>scm:git:git@github.com:openmrs/openmrs-module-fhir2extension.git</connection>
-        <developerConnection>scm:git:git@github.com:openmrs/openmrs-module-fhir2extension.git</developerConnection>
-        <url>https://github.com/openmrs/openmrs-module-fhir2extension/</url>
+        <connection>scm:git:git@github.com:icrc/openmrs-module-fhir2extension.git</connection>
+        <developerConnection>scm:git:git@github.com:icrc/openmrs-module-fhir2extension.git</developerConnection>
+        <url>https://github.com/icrc/openmrs-module-fhir2extension/</url>
     </scm>
 
     <modules>
