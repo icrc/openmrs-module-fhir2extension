@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module configVersion="1.2">
+
+    <!-- Base Module Properties -->
+    <id>${project.parent.artifactId}</id>
+    <name>${project.parent.name}</name>
+    <version>${project.parent.version}</version>
+    <package>org.openmrs.module.fhir2extension</package>
+    <author>LOlive01</author>
+    <description>${project.parent.description}</description>
+
+    <activator>org.openmrs.module.fhir2extension.Fhir2ExtensionActivator</activator>
+
+    <!-- <updateURL>https://modules.openmrs.org/modules/download/@MODULE_ID@/update.rdf</updateURL> -->
+    <!-- /Base Module Properties -->
+    <require_version>${openmrsPlatformVersion}</require_version>
+
+
+    <!-- Require Modules -->
+    <require_modules>
+        <require_module>org.openmrs.module.fhir2</require_module>
+    </require_modules>
+
+    <messages>
+        <lang>en</lang>
+        <file>messages.properties</file>
+    </messages>
+    <messages>
+        <lang>fr</lang>
+        <file>messages_fr.properties</file>
+    </messages>
+    <messages>
+        <lang>es</lang>
+        <file>messages_es.properties</file>
+    </messages>
+    <!-- /Internationalization -->
+
+</module>
+
