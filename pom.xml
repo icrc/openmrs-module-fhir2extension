@@ -25,6 +25,7 @@
         <powerMockVersion>2.0.9</powerMockVersion>
     </properties>
 
+
     <url>https://github.com/icrc/openmrs-module-patientgrid</url>
 
     <developers>
