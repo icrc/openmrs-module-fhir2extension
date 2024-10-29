@@ -1,0 +1,51 @@
+name: Do Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: github
+      - name: Git Config
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+      - name: Remove snapshot
+        run: mvn versions:set -DremoveSnapshot=true -DgenerateBackupPoms=false
+      - name: Release with Maven
+        run: mvn --batch-mode deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Git tag
+        run: |
+          CURRENT_PROJECT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          git commit -a -m "[skip ci] release $CURRENT_PROJECT_VERSION"
+          git tag "$CURRENT_PROJECT_VERSION"
+          git push origin "$CURRENT_PROJECT_VERSION"
+          gh release create $CURRENT_PROJECT_VERSION
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Move to next snapshot
+        run: mvn versions:set -DnextSnapshot=true -DgenerateBackupPoms=false
+
+      - name: Create Branch for next Snapshot Version
+        run: |
+          CURRENT_PROJECT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          BRANCH_NAME="move-to-$CURRENT_PROJECT_VERSION"
+          git checkout -b "$BRANCH_NAME"
+          git commit -a -m "[skip ci] change version to new snapshot $CURRENT_PROJECT_VERSION"
+          git push origin "$BRANCH_NAME"
+          gh pr create -B main -H $BRANCH_NAME --title "Update Version to $CURRENT_PROJECT_VERSION" --body 'Created by "Do Release" workflow'
+          echo "Please, accept the PR: Update Version to $CURRENT_PROJECT_VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

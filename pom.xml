@@ -25,7 +25,6 @@
         <powerMockVersion>2.0.4</powerMockVersion>
     </properties>
 
-    <url>https://wiki.openmrs.org/x/FQ4z</url>
 
     <scm>
         <connection>scm:git:git@github.com:openmrs/openmrs-module-fhir2extension.git</connection>
@@ -103,21 +102,6 @@
             <id>openmrs-repo</id>
             <name>OpenMRS Nexus Repository</name>
             <url>https://openmrs.jfrog.io/artifactory/public/</url>
-        </repository>
-        <repository>
-            <id>mks-nexus-public</id>
-            <url>https://nexus.mekomsolutions.net/repository/maven-public/</url>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>bahmni-nexus</id>
-            <name>Bahmni Nexus Repository</name>
-            <url>https://oss.sonatype.org/content/groups/public</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
         </repository>
     </repositories>
 
