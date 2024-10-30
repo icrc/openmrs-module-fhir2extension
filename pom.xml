@@ -41,7 +41,7 @@
             <url>https://maven.pkg.github.com/icrc/openmrs-module-fhir2extension</url>
         </repository>
         <snapshotRepository>
-            <id>github-snapshot</id>
+            <id>github</id>
             <name>GitHub SNAPSHOT Packages</name>
             <url>https://maven.pkg.github.com/icrc/openmrs-module-fhir2extension</url>
         </snapshotRepository>
