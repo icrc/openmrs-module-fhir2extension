@@ -31,6 +31,7 @@
 package org.openmrs.module.fhir2extension.api.impl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.PostConstruct;
 
 import ca.uhn.fhir.rest.api.PatchTypeEnum;
 import ca.uhn.fhir.rest.api.server.IBundleProvider;
@@ -65,21 +66,26 @@ public class FhirQuestionnaireServiceImpl implements FhirQuestionnaireService {
 	@Qualifier("adminService")
 	private AdministrationService administrationService;
 	
-	private String questionnairesFolder = administrationService.getGlobalProperty("fhir2extension.questionnaires.folder");
+	private String questionnairesFolder;
+	
+	@PostConstruct
+	public void postConstruct() {
+		this.questionnairesFolder = administrationService.getGlobalProperty("fhir2extension.questionnaires.folder");
+	}
 	
 	@Override
 	public Questionnaire get(@Nonnull String uuid) {
-		return QuestionnaireFileUtils.getQuestionnaire(questionnairesFolder, uuid);
+		return QuestionnaireFileUtils.getQuestionnaire(this.questionnairesFolder, uuid);
 	}
 	
 	@Override
 	public List<Questionnaire> get(@Nonnull Collection<String> collection) {
-		return collection.stream().map(uuid -> QuestionnaireFileUtils.getQuestionnaire(questionnairesFolder, uuid)).collect(Collectors.toList());
+		return collection.stream().map(uuid -> QuestionnaireFileUtils.getQuestionnaire(this.questionnairesFolder, uuid)).collect(Collectors.toList());
 	}
 	
 	@Override
 	public IBundleProvider getQuestionnaireEverything() {
-		return new SimpleBundleProvider(QuestionnaireFileUtils.getAllQuestionnaires(questionnairesFolder));
+		return new SimpleBundleProvider(QuestionnaireFileUtils.getAllQuestionnaires(this.questionnairesFolder));
 	}
 	
 	@Override
