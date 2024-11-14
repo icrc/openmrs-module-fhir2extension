@@ -32,9 +32,13 @@ package org.openmrs.module.fhir2extension.providers.r4;
 
 import static lombok.AccessLevel.PACKAGE;
 
+import ca.uhn.fhir.model.api.Include;
 import ca.uhn.fhir.model.valueset.BundleTypeEnum;
 import ca.uhn.fhir.rest.annotation.*;
+import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.api.server.IBundleProvider;
+import ca.uhn.fhir.rest.param.DateRangeParam;
+import ca.uhn.fhir.rest.param.TokenAndListParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import lombok.Setter;
@@ -42,8 +46,12 @@ import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
 import org.openmrs.module.fhir2.api.annotations.R4Provider;
 import org.openmrs.module.fhir2extension.api.FhirQuestionnaireService;
+import org.openmrs.module.fhir2extension.api.search.param.QuestionnaireSearchParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import java.util.HashSet;
 
 @Component("questionnaireFhirR4ResourceProvider")
 @R4Provider
@@ -66,6 +74,12 @@ public class QuestionnaireFhirResourceProvider implements IResourceProvider {
 			throw new ResourceNotFoundException("Could not find Questionnaire with Id " + id.getIdPart());
 		}
 		return questionnaire;
+	}
+	
+	@Search
+	@SuppressWarnings("unused")
+	public IBundleProvider searchQuestionnaires() {
+		return fhirQuestionnaireService.getQuestionnaireEverything();
 	}
 	
 	/**
