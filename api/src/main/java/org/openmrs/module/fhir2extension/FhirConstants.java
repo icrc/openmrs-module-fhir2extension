@@ -31,12 +31,14 @@
 package org.openmrs.module.fhir2extension;
 
 public final class FhirConstants {
-	
-	private FhirConstants() {
-	}
-	
-	public static final String QUESTIONNAIRE = "Questionnaire";
-	
-	public static final String FHIR_QUESTIONNAIRE_TYPE = "FHIR Questionnaire";
-	
+
+    private FhirConstants() {
+    }
+
+    public static final String QUESTIONNAIRE = "Questionnaire";
+
+    public static final String FHIR_QUESTIONNAIRE_TYPE = "FHIR Questionnaire";
+
+    public static final String FORM_SYSTEM_URI = "http://fhir.openmrs.org/core/StructureDefinition/omrs-form";
+
 }
