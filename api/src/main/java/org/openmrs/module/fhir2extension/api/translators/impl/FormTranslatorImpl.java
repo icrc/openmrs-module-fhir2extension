@@ -1,3 +1,4 @@
+package org.openmrs.module.fhir2extension.api.translators.impl;/*
 /*
  * with Copyright 2024 ICRC
  *
@@ -28,17 +29,52 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.openmrs.module.fhir2extension;
 
-public final class FhirConstants {
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.openmrs.Form;
+import org.openmrs.api.FormService;
+import org.openmrs.module.fhir2extension.api.translators.FormTranslator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-    private FhirConstants() {
-    }
+import static org.openmrs.module.fhir2.api.util.FhirUtils.getMetadataTranslation;
 
-    public static final String QUESTIONNAIRE = "Questionnaire";
-
-    public static final String FHIR_QUESTIONNAIRE_TYPE = "FHIR Questionnaire";
+@Component
+public class FormTranslatorImpl implements FormTranslator<Form> {
 
     public static final String FORM_SYSTEM_URI = "http://fhir.openmrs.org/core/StructureDefinition/omrs-form";
 
+    @Autowired
+    private FormService formService;
+
+    @Override
+    public CodeableConcept toFhirResource(Form form) {
+        if (form == null) {
+            return null;
+        }
+
+        CodeableConcept code = new CodeableConcept();
+        code.addCoding().setSystem(FORM_SYSTEM_URI).setCode(form.getUuid()).setDisplay(getMetadataTranslation(form));
+
+        return code;
+    }
+
+    @Override
+    public Form toOpenmrsType(CodeableConcept form) {
+        if (form == null || !form.hasCoding()) {
+            return null;
+        }
+        Coding coding = form.getCoding().stream()
+                .filter(Coding::hasSystem)
+                .filter(c -> FORM_SYSTEM_URI.equals(c.getSystem()))
+                .findFirst()
+                .orElse(null);
+
+        if (coding == null) {
+            return null;
+        }
+
+        return formService.getFormByUuid(coding.getCode());
+    }
 }

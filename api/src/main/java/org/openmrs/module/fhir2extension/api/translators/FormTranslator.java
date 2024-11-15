@@ -1,3 +1,4 @@
+package org.openmrs.module.fhir2extension.api.translators;/*
 /*
  * with Copyright 2024 ICRC
  *
@@ -28,17 +29,23 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.openmrs.module.fhir2extension;
 
-public final class FhirConstants {
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.openmrs.module.fhir2.api.translators.OpenmrsFhirTranslator;
 
-    private FhirConstants() {
-    }
+public interface FormTranslator<T> extends OpenmrsFhirTranslator<T, CodeableConcept> {
 
-    public static final String QUESTIONNAIRE = "Questionnaire";
+    /**
+     * @param form the OpenMRS form to translate
+     * @return a list consisting of an encoded version of the OpenMRS form
+     */
+    @Override
+    CodeableConcept toFhirResource(T form);
 
-    public static final String FHIR_QUESTIONNAIRE_TYPE = "FHIR Questionnaire";
-
-    public static final String FORM_SYSTEM_URI = "http://fhir.openmrs.org/core/StructureDefinition/omrs-form";
-
+    /**
+     * @param form a list consisting of an encoded version of the OpenMRS form
+     * @return the OpenMRS encounter type or visit type
+     */
+    @Override
+    T toOpenmrsType(CodeableConcept form);
 }
