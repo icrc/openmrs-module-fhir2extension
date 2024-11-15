@@ -47,31 +47,20 @@ import static org.apache.commons.lang3.Validate.notNull;
 @Primary
 @Component
 public class EncounterTranslatorExtensionImpl extends EncounterTranslatorImpl {
-
-    @Autowired
-    private FormTranslator<Form> formTranslator;
-
-    @Override
-    public Encounter toFhirResource(@Nonnull org.openmrs.Encounter openmrsEncounter) {
-        notNull(openmrsEncounter, "The Openmrs Encounter object should not be null");
-
-        Encounter encounter = super.toFhirResource(openmrsEncounter);
-
-        return encounter;
-    }
-
-    @Override
-    public org.openmrs.Encounter toOpenmrsType(@Nonnull Encounter fhirEncounter) {
-        notNull(fhirEncounter, "The Encounter object should not be null");
-        return this.toOpenmrsType(new org.openmrs.Encounter(), fhirEncounter);
-    }
-
-    @Override
+	
+	@Autowired
+	private FormTranslator<Form> formTranslator;
+	
+	@Override
+	public org.openmrs.Encounter toOpenmrsType(@Nonnull Encounter fhirEncounter) {
+		notNull(fhirEncounter, "The Encounter object should not be null");
+		return this.toOpenmrsType(new org.openmrs.Encounter(), fhirEncounter);
+	}
+	
+	@Override
     public org.openmrs.Encounter toOpenmrsType(@Nonnull org.openmrs.Encounter existingEncounter,
                                                @Nonnull Encounter encounter) {
         super.toOpenmrsType(existingEncounter, encounter);
-        notNull(existingEncounter, "The existing Openmrs Encounter object should not be null");
-        notNull(encounter, "The Encounter object should not be null");
 
         CodeableConcept formType = encounter.getType().stream()
                 .filter(codeableConcept -> codeableConcept.getCoding().stream()
