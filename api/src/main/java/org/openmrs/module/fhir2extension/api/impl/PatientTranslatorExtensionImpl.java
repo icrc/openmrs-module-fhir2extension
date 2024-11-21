@@ -43,31 +43,30 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.api.translators.PatientTranslator;
 import org.openmrs.module.fhir2.api.translators.impl.PatientTranslatorImpl;
 
-
 @Primary
 @Component
 public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implements PatientTranslator {
-
-    @Autowired
-    LocationService locationService;
-
-    @Override
-    public org.openmrs.Patient toOpenmrsType(@Nonnull Patient fhirPatient) {
-        notNull(fhirPatient, "The Patient object should not be null");
-
-        if (Context.getUserContext().getLocation() == null) {
-            String l = extractLocationUuidFromPatient(fhirPatient);
-
-            Integer locationId = getLocationIdFromUuid(l);
-            if (locationId != null) {
-                Context.getUserContext().setLocationId(locationId);
-            }
-        }
-
-        return toOpenmrsType(new org.openmrs.Patient(), fhirPatient);
-    }
-
-    private String extractLocationUuidFromPatient(Patient patient) {
+	
+	@Autowired
+	LocationService locationService;
+	
+	@Override
+	public org.openmrs.Patient toOpenmrsType(@Nonnull Patient fhirPatient) {
+		notNull(fhirPatient, "The Patient object should not be null");
+		
+		if (Context.getUserContext().getLocation() == null) {
+			String l = extractLocationUuidFromPatient(fhirPatient);
+			
+			Integer locationId = getLocationIdFromUuid(l);
+			if (locationId != null) {
+				Context.getUserContext().setLocationId(locationId);
+			}
+		}
+		
+		return toOpenmrsType(new org.openmrs.Patient(), fhirPatient);
+	}
+	
+	private String extractLocationUuidFromPatient(Patient patient) {
         if (patient.hasIdentifier()) {
             return patient.getIdentifier().stream().flatMap(identifier -> identifier.getExtension().stream())
                     .filter(
@@ -83,13 +82,13 @@ public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implem
         }
         return null;
     }
-
-    private Integer getLocationIdFromUuid(String uuid) {
-        org.openmrs.Location location = locationService.getLocationByUuid(uuid);
-
-        if (location != null) {
-            return location.getId();
-        }
-        return null;
-    }
+	
+	private Integer getLocationIdFromUuid(String uuid) {
+		org.openmrs.Location location = locationService.getLocationByUuid(uuid);
+		
+		if (location != null) {
+			return location.getId();
+		}
+		return null;
+	}
 }
