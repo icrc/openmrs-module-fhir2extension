@@ -42,6 +42,14 @@ In module FHIR Questionnaires correspond to an OpenMRS Form Resource with the js
 
     GET /ws/fhir2/R4/Questionnaire
 
+## Custom Patient Translator Extension: Injecting Location in OpenMRS
+
+The `PatientTranslatorExtensionImpl` overrides the default `PatientTranslator` in OpenMRS to ensure that a location is injected into the user's context when transforming a `FHIR Patient` object into an `OpenMRS Patient`.
+
+In OpenMRS, a location is required to create a patient. This implementation extracts the location UUID from the `FHIR Patient` object (via a custom extension) and sets the user's context location accordingly. If the location is not already set in the context, the system resolves the location from the provided UUID and assigns it.
+
+This customization simplifies workflows by automatically ensuring the required location is available during patient creation.
+
 Building from Source
 --------------------
 You will need to have Java 1.8+ and Maven 2.x+ installed.  Use the command 'mvn package' to
