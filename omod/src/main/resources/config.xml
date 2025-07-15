@@ -20,6 +20,7 @@
     <!-- Require Modules -->
     <require_modules>
         <require_module>org.openmrs.module.fhir2</require_module>
+        <require_module>org.openmrs.module.idgen</require_module>
     </require_modules>
 
     <messages>
