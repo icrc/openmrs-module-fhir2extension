@@ -31,46 +31,85 @@
 package org.openmrs.module.fhir2extension.api.impl;
 
 import static org.apache.commons.lang3.Validate.notNull;
+
 import javax.annotation.Nonnull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 import java.util.Objects;
+
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Reference;
+import org.openmrs.PatientIdentifierType;
 import org.openmrs.api.LocationService;
+import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.fhir2.api.translators.PatientTranslator;
 import org.openmrs.module.fhir2.api.translators.impl.PatientTranslatorImpl;
+import org.openmrs.module.idgen.AutoGenerationOption;
+import org.openmrs.module.idgen.service.IdentifierSourceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 @Primary
 @Component
 public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implements PatientTranslator {
 	
 	@Autowired
-	LocationService locationService;
+	private LocationService locationService;
+	
+	@Autowired
+	private IdentifierSourceService identifierSourceService;
+	
+	@Autowired
+	private PatientService patientService;
 	
 	@Override
 	public org.openmrs.Patient toOpenmrsType(@Nonnull Patient fhirPatient) {
 		notNull(fhirPatient, "The Patient object should not be null");
 		
-		if (Context.getUserContext().getLocation() == null) {
-			String l = extractLocationUuidFromPatient(fhirPatient);
-			
-			Integer locationId = getLocationIdFromUuid(l);
-			if (locationId != null) {
-				Context.getUserContext().setLocationId(locationId);
-			}
-		}
+		setLocationContextWithPatientIdentifier(fhirPatient);
+		generatePatientIdentifiers(fhirPatient);
 		
 		return toOpenmrsType(new org.openmrs.Patient(), fhirPatient);
 	}
 	
+	private void setLocationContextWithPatientIdentifier(Patient fhirPatient) {
+		if (Context.getUserContext().getLocation() == null) {
+			String locationUuid = extractLocationUuidFromPatient(fhirPatient);
+			Integer locationId = getLocationIdFromUuid(locationUuid);
+			if (locationId != null) {
+				Context.getUserContext().setLocationId(locationId);
+			}
+		}
+	}
+	
+	private void generatePatientIdentifiers(Patient fhirPatient) {
+        fhirPatient.getIdentifier().forEach(identifier -> {
+            if (!identifier.hasValue() && identifier.getType().getText() != null) {
+                String idTypeText = identifier.getType().getText().toLowerCase();
+
+                PatientIdentifierType idType = patientService
+                        .getAllPatientIdentifierTypes()
+                        .stream()
+                        .filter(t -> t.getName() != null && t.getName().equalsIgnoreCase(idTypeText))
+                        .findFirst()
+                        .orElse(null);
+
+                if (idType != null) {
+                    AutoGenerationOption autoGenOption = identifierSourceService.getAutoGenerationOption(idType);
+                    if (autoGenOption != null && autoGenOption.isAutomaticGenerationEnabled()) {
+                        String generatedValue = identifierSourceService.generateIdentifier(idType, null);
+                        identifier.setValue(generatedValue);
+                    }
+                }
+            }
+        });
+    }
+	
 	private String extractLocationUuidFromPatient(Patient patient) {
         if (patient.hasIdentifier()) {
-            return patient.getIdentifier().stream().flatMap(identifier -> identifier.getExtension().stream())
-                    .filter(
-                            extension -> "http://fhir.openmrs.org/ext/patient/identifier#location".equals(extension.getUrl()))
+            return patient.getIdentifier().stream()
+                    .flatMap(identifier -> identifier.getExtension().stream())
+                    .filter(extension -> "http://fhir.openmrs.org/ext/patient/identifier#location".equals(extension.getUrl()))
                     .map(extension -> {
                         Reference locationReference = (Reference) extension.getValue();
                         if (locationReference != null && locationReference.getReference() != null) {
@@ -78,17 +117,19 @@ public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implem
                             return reference.substring(reference.lastIndexOf('/') + 1);
                         }
                         return null;
-                    }).filter(Objects::nonNull).findFirst().orElse(null);
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
         }
         return null;
     }
 	
 	private Integer getLocationIdFromUuid(String uuid) {
-		org.openmrs.Location location = locationService.getLocationByUuid(uuid);
-		
-		if (location != null) {
-			return location.getId();
+		if (uuid == null) {
+			return null;
 		}
-		return null;
+		org.openmrs.Location location = locationService.getLocationByUuid(uuid);
+		return location != null ? location.getId() : null;
 	}
 }
