@@ -16,7 +16,7 @@
     <description>ICRC Extension for FHIR2 module</description>
 
     <properties>
-        <openmrsPlatformVersion>2.5.13-SNAPSHOT</openmrsPlatformVersion>
+        <openmrsPlatformVersion>2.8.0-SNAPSHOT</openmrsPlatformVersion>
         <openmrs.fhir2.version>2.2.0</openmrs.fhir2.version>
         <web.services.version>2.38.0</web.services.version>
         <junitVersion>4.13.2</junitVersion>
