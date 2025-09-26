@@ -20,47 +20,47 @@ import org.springframework.stereotype.Component;
 @Component
 @Setter
 public class ObsGroupHelper {
-
-    @Autowired
-    private ObsService obsService;
-
-    @Autowired
-    private FhirObservationDao observationDao;
-
-    public void voidAndAddToGroupNewObservation(Obs obsGroup, Obs oldObservation) {
-        Obs newObservation = Obs.newInstance(oldObservation);
-
-        //void oldObservation
-        obsService.voidObs(oldObservation, "voided while translating Observation to add to Obs Group");
-
-        //Add to group new observation
-        newObservation.setObsGroup(obsGroup);
-        obsGroup.addGroupMember(newObservation);
-    }
-
-    public void setObsGroupDefaultValue(Obs obs) {
-        if (obs.getConcept() != null && obs.getConcept().getDatatype() != null) {
-            String hl7Abbreviation = obs.getConcept().getDatatype().getHl7Abbreviation();
-            switch (hl7Abbreviation) {
-                case "CWE":
-                case "C":
-                case "ZZ":
-                    obs.setValueCoded(org.openmrs.api.context.Context.getConceptService().getConceptByUuid(
-                            "1065AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
-                    break;
-                case "ST":
-                case "TEXT":
-                    obs.setValueText("");
-                    break;
-                case "NM":
-                case "NUMERIC":
-                    obs.setValueNumeric(0d);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-    }
-
+	
+	@Autowired
+	private ObsService obsService;
+	
+	@Autowired
+	private FhirObservationDao observationDao;
+	
+	public void voidAndAddToGroupNewObservation(Obs obsGroup, Obs oldObservation) {
+		Obs newObservation = Obs.newInstance(oldObservation);
+		
+		//void oldObservation
+		obsService.voidObs(oldObservation, "voided while translating Observation to add to Obs Group");
+		
+		//Add to group new observation
+		newObservation.setObsGroup(obsGroup);
+		obsGroup.addGroupMember(newObservation);
+	}
+	
+	public void setObsGroupDefaultValue(Obs obs) {
+		if (obs.getConcept() != null && obs.getConcept().getDatatype() != null) {
+			String hl7Abbreviation = obs.getConcept().getDatatype().getHl7Abbreviation();
+			switch (hl7Abbreviation) {
+				case "CWE":
+				case "C":
+				case "ZZ":
+					obs.setValueCoded(org.openmrs.api.context.Context.getConceptService().getConceptByUuid(
+					    "1065AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
+					break;
+				case "ST":
+				case "TEXT":
+					obs.setValueText("");
+					break;
+				case "NM":
+				case "NUMERIC":
+					obs.setValueNumeric(0d);
+					break;
+				default:
+					break;
+			}
+		}
+		
+	}
+	
 }

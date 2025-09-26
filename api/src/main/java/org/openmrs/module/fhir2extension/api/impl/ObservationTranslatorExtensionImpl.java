@@ -51,72 +51,72 @@ import static org.apache.commons.lang3.Validate.notNull;
 @Primary
 @Component
 public class ObservationTranslatorExtensionImpl extends ObservationTranslatorImpl {
-
-    @Autowired
-    private ObsGroupHelper obsGroupHelper;
-
-    @Autowired
-    private ObservationValueTranslator observationValueTranslator;
-
-    @Autowired
-    private ObservationReferenceTranslator observationReferenceTranslator;
-
-    @Autowired
-    private ObsService obsService;
-
-    @Override
-    public Observation toFhirResource(@Nonnull Obs observation) {
-        notNull(observation, "The Obs object should not be null");
-        Observation fhirObservation = super.toFhirResource(observation);
-
-        if (observation.getObsGroup() != null) {
-            Reference parentRef = observationReferenceTranslator.toFhirResource(observation.getObsGroup());
-            if (parentRef != null) {
-                fhirObservation.addPartOf(parentRef);
-            }
-        }
-
-        return fhirObservation;
-    }
-
-    public Obs toOpenmrsType(@Nonnull Observation fhirObservation) {
-        notNull(fhirObservation, "The Observation object should not be null");
-
-        Obs obs = super.toOpenmrsType(new Obs(), fhirObservation);
-
-        if (!fhirObservation.hasValue()) {
-            obsGroupHelper.setObsGroupDefaultValue(obs);
-        }
-
-        if (fhirObservation.hasPartOf()) {
-            for (Reference reference : fhirObservation.getPartOf()) {
-                Obs parentObs = observationReferenceTranslator.toOpenmrsType(reference);
-                if (parentObs != null) {
-                    obs.setObsGroup(parentObs);
-                    parentObs.addGroupMember(obs);
-                    return obs;
-                }
-            }
-        }
-
-        return obsService.saveObs(obs, "Created observation");
-    }
-
-    @Override
-    public Obs toOpenmrsType(Obs existingObs, Observation observation, Supplier<Obs> groupedObsFactory) {
-        notNull(existingObs, "The existing Obs object should not be null");
-        notNull(observation, "The Observation object should not be null");
-
-        for (Reference reference : observation.getHasMember()) {
-            Obs childObservation = observationReferenceTranslator.toOpenmrsType(reference);
-            if (childObservation.getObsGroup() == null) {
-                obsGroupHelper.voidAndAddToGroupNewObservation(existingObs, childObservation);
-            } else {
-                existingObs.addGroupMember(childObservation);
-            }
-        }
-
-        return super.toOpenmrsType(existingObs, observation, groupedObsFactory);
-    }
-
+	
+	@Autowired
+	private ObsGroupHelper obsGroupHelper;
+	
+	@Autowired
+	private ObservationValueTranslator observationValueTranslator;
+	
+	@Autowired
+	private ObservationReferenceTranslator observationReferenceTranslator;
+	
+	@Autowired
+	private ObsService obsService;
+	
+	@Override
+	public Observation toFhirResource(@Nonnull Obs observation) {
+		notNull(observation, "The Obs object should not be null");
+		Observation fhirObservation = super.toFhirResource(observation);
+		
+		if (observation.getObsGroup() != null) {
+			Reference parentRef = observationReferenceTranslator.toFhirResource(observation.getObsGroup());
+			if (parentRef != null) {
+				fhirObservation.addPartOf(parentRef);
+			}
+		}
+		
+		return fhirObservation;
+	}
+	
+	public Obs toOpenmrsType(@Nonnull Observation fhirObservation) {
+		notNull(fhirObservation, "The Observation object should not be null");
+		
+		Obs obs = super.toOpenmrsType(new Obs(), fhirObservation);
+		
+		if (!fhirObservation.hasValue()) {
+			obsGroupHelper.setObsGroupDefaultValue(obs);
+		}
+		
+		if (fhirObservation.hasPartOf()) {
+			for (Reference reference : fhirObservation.getPartOf()) {
+				Obs parentObs = observationReferenceTranslator.toOpenmrsType(reference);
+				if (parentObs != null) {
+					obs.setObsGroup(parentObs);
+					parentObs.addGroupMember(obs);
+					return obs;
+				}
+			}
+		}
+		
+		return obsService.saveObs(obs, "Created observation");
+	}
+	
+	@Override
+	public Obs toOpenmrsType(Obs existingObs, Observation observation, Supplier<Obs> groupedObsFactory) {
+		notNull(existingObs, "The existing Obs object should not be null");
+		notNull(observation, "The Observation object should not be null");
+		
+		for (Reference reference : observation.getHasMember()) {
+			Obs childObservation = observationReferenceTranslator.toOpenmrsType(reference);
+			if (childObservation.getObsGroup() == null) {
+				obsGroupHelper.voidAndAddToGroupNewObservation(existingObs, childObservation);
+			} else {
+				existingObs.addGroupMember(childObservation);
+			}
+		}
+		
+		return super.toOpenmrsType(existingObs, observation, groupedObsFactory);
+	}
+	
 }
