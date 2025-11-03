@@ -30,57 +30,36 @@
  */
 package org.openmrs.module.fhir2extension.api.impl;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Reference;
-import org.openmrs.Obs;
-import org.openmrs.module.fhir2.api.translators.ObservationReferenceTranslator;
-import org.openmrs.module.fhir2.api.translators.impl.ObservationTranslatorImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.openmrs.module.fhir2.api.impl.FhirObservationServiceImpl;
+import org.openmrs.validator.ValidateUtil;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import javax.annotation.Nonnull;
 
-import static org.apache.commons.lang3.Validate.notNull;
+import javax.annotation.Nonnull;
 
 @Primary
 @Component
-public class ObservationTranslatorExtensionImpl extends ObservationTranslatorImpl {
-	
-	@Autowired
-	private ObservationReferenceTranslator observationReferenceTranslator;
-	
-	@Override
-	public Observation toFhirResource(@Nonnull Obs observation) {
-		notNull(observation, "The Obs object should not be null");
-		Observation fhirObservation = super.toFhirResource(observation);
-		
-		Obs parentObs = observation.getObsGroup();
-		if (parentObs != null) {
-			Reference parentRef = observationReferenceTranslator.toFhirResource(parentObs);
-			if (parentRef != null) {
-				fhirObservation.addPartOf(parentRef);
-			}
-		}
-		
-		return fhirObservation;
-	}
-	
-	public Obs toOpenmrsType(@Nonnull Observation fhirObservation) {
-		notNull(fhirObservation, "The Observation object should not be null");
-		
-		Obs obs = super.toOpenmrsType(new Obs(), fhirObservation);
-		
-		if (fhirObservation.hasPartOf()) {
-			for (Reference reference : fhirObservation.getPartOf()) {
-				Obs parentObs = observationReferenceTranslator.toOpenmrsType(reference);
-				if (parentObs != null) {
-					obs.setObsGroup(parentObs);
-					parentObs.addGroupMember(obs);
-					return obs;
-				}
-			}
-		}
-		
-		return obs;
-	}
+@Getter(AccessLevel.PROTECTED)
+@Setter(AccessLevel.PACKAGE)
+public class FhirObservationServiceExtensionImpl extends FhirObservationServiceImpl {
+
+    @Override
+    public Observation create(@Nonnull Observation observation) {
+
+        Observation observationCreated;
+        //Temporarily disable validator to be able to create parent observation for obsgroups using fhir endpoint
+        if (!observation.hasValue()) {
+            ValidateUtil.disableValidationForThread();
+            observationCreated = super.create(observation);
+            ValidateUtil.resumeValidationForThread();
+        } else {
+            observationCreated = super.create(observation);
+        }
+        return observationCreated;
+
+    }
 }
