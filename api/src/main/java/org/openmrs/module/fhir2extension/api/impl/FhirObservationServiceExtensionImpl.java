@@ -46,20 +46,20 @@ import javax.annotation.Nonnull;
 @Getter(AccessLevel.PROTECTED)
 @Setter(AccessLevel.PACKAGE)
 public class FhirObservationServiceExtensionImpl extends FhirObservationServiceImpl {
-
-    @Override
-    public Observation create(@Nonnull Observation observation) {
-
-        Observation observationCreated;
-        //Temporarily disable validator to be able to create parent observation for obsgroups using fhir endpoint
-        if (!observation.hasValue()) {
-            ValidateUtil.disableValidationForThread();
-            observationCreated = super.create(observation);
-            ValidateUtil.resumeValidationForThread();
-        } else {
-            observationCreated = super.create(observation);
-        }
-        return observationCreated;
-
-    }
+	
+	@Override
+	public Observation create(@Nonnull Observation observation) {
+		
+		Observation observationCreated;
+		//Temporarily disable validator to be able to create parent observation for obsgroups using fhir endpoint
+		if (!observation.hasValue()) {
+			ValidateUtil.disableValidationForThread();
+			observationCreated = super.create(observation);
+			ValidateUtil.resumeValidationForThread();
+		} else {
+			observationCreated = super.create(observation);
+		}
+		return observationCreated;
+		
+	}
 }
