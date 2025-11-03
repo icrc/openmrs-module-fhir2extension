@@ -31,56 +31,32 @@
 package org.openmrs.module.fhir2extension.api.impl;
 
 import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Reference;
 import org.openmrs.Obs;
-import org.openmrs.module.fhir2.api.translators.ObservationReferenceTranslator;
-import org.openmrs.module.fhir2.api.translators.impl.ObservationTranslatorImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.openmrs.module.fhir2.api.translators.impl.ObservationStatusTranslatorImpl;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import javax.annotation.Nonnull;
 
-import static org.apache.commons.lang3.Validate.notNull;
+import javax.annotation.Nonnull;
 
 @Primary
 @Component
-public class ObservationTranslatorExtensionImpl extends ObservationTranslatorImpl {
-	
-	@Autowired
-	private ObservationReferenceTranslator observationReferenceTranslator;
-	
-	@Override
-	public Observation toFhirResource(@Nonnull Obs observation) {
-		notNull(observation, "The Obs object should not be null");
-		Observation fhirObservation = super.toFhirResource(observation);
-		
-		Obs parentObs = observation.getObsGroup();
-		if (parentObs != null) {
-			Reference parentRef = observationReferenceTranslator.toFhirResource(parentObs);
-			if (parentRef != null) {
-				fhirObservation.addPartOf(parentRef);
-			}
-		}
-		
-		return fhirObservation;
-	}
-	
-	public Obs toOpenmrsType(@Nonnull Observation fhirObservation) {
-		notNull(fhirObservation, "The Observation object should not be null");
-		
-		Obs obs = super.toOpenmrsType(new Obs(), fhirObservation);
-		
-		if (fhirObservation.hasPartOf()) {
-			for (Reference reference : fhirObservation.getPartOf()) {
-				Obs parentObs = observationReferenceTranslator.toOpenmrsType(reference);
-				if (parentObs != null) {
-					obs.setObsGroup(parentObs);
-					parentObs.addGroupMember(obs);
-					return obs;
-				}
-			}
-		}
-		
-		return obs;
-	}
+public class ObservationStatusTranslatorExtensionImpl extends ObservationStatusTranslatorImpl {
+
+    @Override
+    public Observation.ObservationStatus toFhirResource(@Nonnull Obs obs) {
+        if (obs.getVoided()) {
+            return Observation.ObservationStatus.CANCELLED;
+        }
+        return super.toFhirResource(obs);
+    }
+
+    @Override
+    public Obs toOpenmrsType(@Nonnull Obs observation, @Nonnull Observation.ObservationStatus observationStatus) {
+        if (observationStatus.equals(Observation.ObservationStatus.CANCELLED)) {
+            observation.setVoided(true);
+            observation.setVoidReason("Updated via the FHIR2 API Extension");
+            return super.toOpenmrsType(observation, Observation.ObservationStatus.AMENDED);
+        }
+        return super.toOpenmrsType(observation, observationStatus);
+    }
 }
