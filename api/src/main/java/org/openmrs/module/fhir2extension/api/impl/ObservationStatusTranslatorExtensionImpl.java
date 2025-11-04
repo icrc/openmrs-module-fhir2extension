@@ -41,22 +41,22 @@ import javax.annotation.Nonnull;
 @Primary
 @Component
 public class ObservationStatusTranslatorExtensionImpl extends ObservationStatusTranslatorImpl {
-
-    @Override
-    public Observation.ObservationStatus toFhirResource(@Nonnull Obs obs) {
-        if (obs.getVoided()) {
-            return Observation.ObservationStatus.CANCELLED;
-        }
-        return super.toFhirResource(obs);
-    }
-
-    @Override
-    public Obs toOpenmrsType(@Nonnull Obs observation, @Nonnull Observation.ObservationStatus observationStatus) {
-        if (observationStatus.equals(Observation.ObservationStatus.CANCELLED)) {
-            observation.setVoided(true);
-            observation.setVoidReason("Updated via the FHIR2 API Extension");
-            return super.toOpenmrsType(observation, Observation.ObservationStatus.AMENDED);
-        }
-        return super.toOpenmrsType(observation, observationStatus);
-    }
+	
+	@Override
+	public Observation.ObservationStatus toFhirResource(@Nonnull Obs obs) {
+		if (obs.getVoided()) {
+			return Observation.ObservationStatus.CANCELLED;
+		}
+		return super.toFhirResource(obs);
+	}
+	
+	@Override
+	public Obs toOpenmrsType(@Nonnull Obs observation, @Nonnull Observation.ObservationStatus observationStatus) {
+		if (observationStatus.equals(Observation.ObservationStatus.CANCELLED)) {
+			observation.setVoided(true);
+			observation.setVoidReason("Updated via the FHIR2 API Extension");
+			return super.toOpenmrsType(observation, Observation.ObservationStatus.AMENDED);
+		}
+		return super.toOpenmrsType(observation, observationStatus);
+	}
 }
