@@ -38,6 +38,7 @@ import java.util.Objects;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Reference;
 import org.openmrs.PatientIdentifierType;
+import org.openmrs.PersonName;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
@@ -52,6 +53,8 @@ import org.springframework.stereotype.Component;
 @Primary
 @Component
 public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implements PatientTranslator {
+	
+	private static final String ATTRIBUTE_NAME_LOCAL_LANGUAGE = "registration.nameIn.localLanguage";
 	
 	@Autowired
 	private LocationService locationService;
@@ -69,7 +72,9 @@ public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implem
 		setLocationContextWithPatientIdentifier(fhirPatient);
 		generatePatientIdentifiers(fhirPatient);
 		
-		return toOpenmrsType(new org.openmrs.Patient(), fhirPatient);
+		org.openmrs.Patient openmrsPatient = toOpenmrsType(new org.openmrs.Patient(), fhirPatient);
+		
+		return handleNameInLocalLanguage(openmrsPatient);
 	}
 	
 	private void setLocationContextWithPatientIdentifier(Patient fhirPatient) {
@@ -131,5 +136,17 @@ public class PatientTranslatorExtensionImpl extends PatientTranslatorImpl implem
 		}
 		org.openmrs.Location location = locationService.getLocationByUuid(uuid);
 		return location != null ? location.getId() : null;
+	}
+	
+	public static org.openmrs.Patient handleNameInLocalLanguage(org.openmrs.Patient patient) {
+		String nameLocalLanguage = patient.getAttribute(ATTRIBUTE_NAME_LOCAL_LANGUAGE) != null ? patient.getAttribute(
+		    ATTRIBUTE_NAME_LOCAL_LANGUAGE).getValue() : null;
+		PersonName name = patient.getPersonName();
+		if (nameLocalLanguage != null && !nameLocalLanguage.isEmpty()) {
+			name.setFamilyName2(nameLocalLanguage);
+		} else {
+			name.setFamilyName2(null);
+		}
+		return patient;
 	}
 }
