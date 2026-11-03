@@ -39,6 +39,10 @@ public final class FhirConstants {
 	
 	public static final String FHIR_QUESTIONNAIRE_TYPE = "FHIR Questionnaire";
 	
+	public static final String GROUP_COHORT_TYPE_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/cohort-type";
+
+	public static final String GROUP_LOCATION_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/location";
+
 	public static final String FORM_SYSTEM_URI = "http://fhir.openmrs.org/core/StructureDefinition/omrs-form";
 	
 }

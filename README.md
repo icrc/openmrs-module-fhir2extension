@@ -74,3 +74,30 @@ If uploads are not allowed from the web (changable via a runtime property), you 
 into the ~/.OpenMRS/modules folder.  (Where ~/.OpenMRS is assumed to be the Application
 Data Directory that the running openmrs is currently using.)  After putting the file in there
 simply restart OpenMRS/tomcat and the module will be loaded and started.
+
+## Group (patient list) support
+
+With the [Cohort Module](https://github.com/openmrs/openmrs-module-cohort) installed, FHIR2 cannot save a `Group`: it maps it to the core cohort, which the Cohort Module refuses ("A standard cohort should not be created while the cohort module is active"). This module saves Groups as the Cohort Module's own `CohortM` and `CohortMember`, so a Group can be created, edited (members included) and deleted through the FHIR API. It needs the Cohort Module (`org.openmrs.module.cohort`, built against 3.7.3).
+
+| Request | Effect |
+|---|---|
+| `POST Group` | Creates the cohort. A `Group.id` sent by the client is kept as its uuid. The name must be unique (the Cohort Module checks it). |
+| `PUT Group/{id}` | Updates the cohort and **sets its members to those listed**, as FHIR says: memberships already there are kept, listed patients that are missing are added, patients no longer listed are voided. |
+| `DELETE Group/{id}` | Voids the cohort. |
+| `PATCH Group/{id}` | Not supported (FHIR2's Group provider has no patch). Send the whole Group with `PUT`. |
+
+What a Group carries:
+
+| Group | Cohort |
+|---|---|
+| `name` | name |
+| extension `http://fhir.openmrs.org/ext/group/description` (string) | description |
+| extension `http://fhir.openmrs.org/ext/group/cohort-type` (string or reference, the cohort type uuid) | cohort type; unknown uuid: 422 |
+| extension `http://fhir.openmrs.org/ext/group/location` (string or reference, the location uuid) | location; unknown uuid: 422 |
+| `active` | `false` voids the cohort |
+| `member[].entity` (`Patient/<uuid>`) | membership of that patient; unknown patient: 422 |
+| `member[].period.start` / `.end`, `member[].inactive` | start and end date of the membership (`inactive` without an end ends it now) |
+
+Reads are FHIR2's own, with `member` and `quantity` rebuilt from the memberships that are active (not voided, started and not ended).
+
+The changes need the privileges of the Cohort Module (`Edit Cohorts` to write).
