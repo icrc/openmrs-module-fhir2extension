@@ -87,13 +87,6 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 	}
 
 	@Override
-	public Group get(@Nonnull String uuid) {
-		Group group = super.get(uuid);
-		CohortM cohort = cohortService.getCohortMByUuid(uuid);
-		return cohort == null ? group : mapper.withActiveMembers(group, cohort);
-	}
-
-	@Override
 	@Transactional
 	public Group create(@Nonnull Group newResource) {
 		if (newResource == null) {
@@ -137,7 +130,9 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 
 		CohortM cohort = cohortService.getCohortMByUuid(uuid);
 		if (cohort == null) {
-			throw resourceNotFound(uuid);
+			// Update as create (FHIR allows it): the client chooses the id. HAPI replaces the id of a POSTed
+			// resource with none, so a PUT is the only way to keep an id made on a device that was offline.
+			return create(updatedResource);
 		}
 
 		boolean inactive = updatedResource.hasActive() && !updatedResource.getActive();
@@ -148,8 +143,12 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 			return updatedResource;
 		}
 		CohortM saved = cohortService.saveCohortM(cohort);
-		
-		syncMembers(saved, updatedResource, new Date());
+
+		// A Group sent without members changes the cohort and leaves its members as they are: a client
+		// that edits the name must not empty the list, and FHIR JSON cannot tell "none" from "absent".
+		if (updatedResource.hasMember()) {
+			syncMembers(saved, updatedResource, new Date());
+		}
 		flush();
 		return get(uuid);
 	}

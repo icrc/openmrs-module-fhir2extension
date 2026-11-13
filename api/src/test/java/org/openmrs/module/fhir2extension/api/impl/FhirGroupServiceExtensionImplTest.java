@@ -200,6 +200,21 @@ public class FhirGroupServiceExtensionImplTest {
 	}
 
 	@Test
+	public void update_shouldKeepTheMembersWhenTheGroupListsNone() {
+		CohortMember kept = membership(PATIENT_A);
+		CohortM cohort = cohort("Group A", kept);
+		when(cohortService.getCohortMByUuid(GROUP_UUID)).thenReturn(cohort);
+		Group group = group("A new name");
+		group.setId(GROUP_UUID);
+
+		service.update(GROUP_UUID, group);
+
+		assertThat(cohort.getName(), equalTo("A new name"));
+		verify(cohortMemberService, never()).voidCohortMember(any(CohortMember.class), anyString());
+		verify(cohortMemberService, never()).saveCohortMember(any(CohortMember.class));
+	}
+
+	@Test
 	public void update_shouldNotTouchAMembershipThatIsStillListed() {
 		CohortM cohort = cohort("Group A", membership(PATIENT_A));
 		when(cohortService.getCohortMByUuid(GROUP_UUID)).thenReturn(cohort);
@@ -226,12 +241,29 @@ public class FhirGroupServiceExtensionImplTest {
 		verify(cohortService, never()).saveCohortM(any(CohortM.class));
 	}
 
-	@Test(expected = ResourceNotFoundException.class)
-	public void update_shouldFailForAnUnknownGroup() {
+	@Test
+	public void update_shouldCreateTheCohortWithTheIdOfTheClientWhenItDoesNotExist() {
+		Group group = group("Group A", PATIENT_A);
+		group.setId(GROUP_UUID);
+
+		service.update(GROUP_UUID, group);
+
+		ArgumentCaptor<CohortM> saved = ArgumentCaptor.forClass(CohortM.class);
+		verify(cohortService).saveCohortM(saved.capture());
+		assertThat(saved.getValue().getUuid(), equalTo(GROUP_UUID));
+		assertThat(saved.getValue().getName(), equalTo("Group A"));
+		assertThat(saved.getValue().getCohortMembers(), hasSize(1));
+	}
+
+	@Test
+	public void update_shouldNotCreateTheSameCohortTwice() {
+		when(cohortService.getCohortMByUuid(GROUP_UUID)).thenReturn(cohort("Group A"));
 		Group group = group("Group A");
 		group.setId(GROUP_UUID);
 
 		service.update(GROUP_UUID, group);
+
+		verify(cohortService, org.mockito.Mockito.times(1)).saveCohortM(any(CohortM.class));
 	}
 
 	@Test(expected = InvalidRequestException.class)

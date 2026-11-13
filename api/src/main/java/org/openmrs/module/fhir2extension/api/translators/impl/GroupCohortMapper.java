@@ -31,7 +31,11 @@
 package org.openmrs.module.fhir2extension.api.translators.impl;
 
 import static org.openmrs.module.fhir2.FhirConstants.OPENMRS_FHIR_EXT_GROUP_DESCRIPTION;
+import static org.openmrs.module.fhir2extension.FhirConstants.GROUP_ATTRIBUTE_EXTENSION_URL;
+import static org.openmrs.module.fhir2extension.FhirConstants.GROUP_CHANGED_BY_EXTENSION_URL;
 import static org.openmrs.module.fhir2extension.FhirConstants.GROUP_COHORT_TYPE_EXTENSION_URL;
+import static org.openmrs.module.fhir2extension.FhirConstants.GROUP_DATE_CHANGED_EXTENSION_URL;
+import static org.openmrs.module.fhir2extension.FhirConstants.GROUP_DATE_CREATED_EXTENSION_URL;
 import static org.openmrs.module.fhir2extension.FhirConstants.GROUP_LOCATION_EXTENSION_URL;
 
 import java.util.ArrayList;
@@ -42,14 +46,19 @@ import java.util.Map;
 
 import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
 import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
+import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Group;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
 import org.openmrs.Location;
 import org.openmrs.Patient;
+import org.openmrs.User;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
+import org.openmrs.module.cohort.CohortAttribute;
 import org.openmrs.module.cohort.CohortM;
 import org.openmrs.module.cohort.CohortMember;
 import org.openmrs.module.cohort.CohortType;
@@ -202,6 +211,74 @@ public class GroupCohortMapper {
 		group.setMember(members);
 		group.setQuantity(members.size());
 		return group;
+	}
+
+	/**
+	 * Adds what the Group does not say by itself and a client needs to show the cohort: where it is, of
+	 * which type, who created and last changed it and when, and the cohort module's own attributes.
+	 * Everything is read only: {@link #toCohort} ignores these extensions when a Group is written.
+	 * <p>
+	 * The creator is not repeated here: FHIR2 already sets it as {@code Group.managingEntity}.
+	 */
+	public Group withDetails(Group group, CohortM cohort) {
+		if (cohort.getLocation() != null) {
+			Reference location = new Reference("Location/" + cohort.getLocation().getUuid());
+			location.setDisplay(cohort.getLocation().getName());
+			replaceExtension(group, GROUP_LOCATION_EXTENSION_URL, location);
+		}
+		if (cohort.getCohortType() != null) {
+			Reference type = new Reference("CohortType/" + cohort.getCohortType().getUuid());
+			type.setDisplay(cohort.getCohortType().getName());
+			replaceExtension(group, GROUP_COHORT_TYPE_EXTENSION_URL, type);
+		}
+		if (cohort.getDateCreated() != null) {
+			replaceExtension(group, GROUP_DATE_CREATED_EXTENSION_URL, new DateTimeType(cohort.getDateCreated()));
+		}
+		if (cohort.getChangedBy() != null) {
+			replaceExtension(group, GROUP_CHANGED_BY_EXTENSION_URL, userReference(cohort.getChangedBy()));
+		}
+		if (cohort.getDateChanged() != null) {
+			replaceExtension(group, GROUP_DATE_CHANGED_EXTENSION_URL, new DateTimeType(cohort.getDateChanged()));
+		}
+
+		group.getExtension().removeIf(extension -> GROUP_ATTRIBUTE_EXTENSION_URL.equals(extension.getUrl()));
+		for (CohortAttribute attribute : cohort.getActiveAttributes()) {
+			String value = valueOf(attribute);
+			if (attribute.getAttributeType() == null || value == null) {
+				continue;
+			}
+			Extension extension = group.addExtension();
+			extension.setUrl(GROUP_ATTRIBUTE_EXTENSION_URL);
+			extension.addExtension().setUrl("type").setValue(new StringType(attribute.getAttributeType().getName()));
+			extension.addExtension().setUrl("value").setValue(new StringType(value));
+		}
+		return group;
+	}
+
+	/** A user as a reference that shows their name; the uuid goes in the identifier. */
+	private static Reference userReference(User user) {
+		Reference reference = new Reference();
+		reference.setDisplay(user.getPerson() != null && user.getPerson().getPersonName() != null
+				? user.getPerson().getPersonName().getFullName()
+				: user.getUsername());
+		reference.setIdentifier(new Identifier().setValue(user.getUuid()));
+		return reference;
+	}
+
+	/** What an attribute holds, as text; a value that cannot be read is skipped. */
+	private static String valueOf(CohortAttribute attribute) {
+		try {
+			Object value = attribute.getValue();
+			return value == null ? null : String.valueOf(value);
+		}
+		catch (RuntimeException e) {
+			return attribute.getValueReference();
+		}
+	}
+
+	private static void replaceExtension(Group group, String url, Type value) {
+		group.getExtension().removeIf(extension -> url.equals(extension.getUrl()));
+		group.addExtension().setUrl(url).setValue(value);
 	}
 
 	/** Not voided, started and not yet ended. */
