@@ -18,6 +18,7 @@
     <properties>
         <openmrsPlatformVersion>2.5.13-SNAPSHOT</openmrsPlatformVersion>
         <openmrs.fhir2.version>2.7.0</openmrs.fhir2.version>
+        <openmrs.cohort.version>3.7.3</openmrs.cohort.version>
         <web.services.version>2.38.0</web.services.version>
         <junitVersion>4.13.2</junitVersion>
         <lombokVersion>1.18.34</lombokVersion>
@@ -95,6 +96,12 @@
                 <groupId>org.openmrs.module</groupId>
                 <artifactId>idgen-api</artifactId>
                 <version>4.14.0</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>cohort-api</artifactId>
+                <version>${openmrs.cohort.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>

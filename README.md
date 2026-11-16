@@ -74,3 +74,65 @@ If uploads are not allowed from the web (changable via a runtime property), you 
 into the ~/.OpenMRS/modules folder.  (Where ~/.OpenMRS is assumed to be the Application
 Data Directory that the running openmrs is currently using.)  After putting the file in there
 simply restart OpenMRS/tomcat and the module will be loaded and started.
+
+## Group (patient list) support
+
+With the [Cohort Module](https://github.com/openmrs/openmrs-module-cohort) installed, FHIR2 cannot save a `Group`: it maps it to the core cohort, which the Cohort Module refuses ("A standard cohort should not be created while the cohort module is active"). This module saves Groups as the Cohort Module's own `CohortM` and `CohortMember`, so a Group can be created, edited, deleted and have its members changed through the FHIR API. It needs the Cohort Module (`org.openmrs.module.cohort`, built against 3.7.3) and its privileges (`Edit Cohorts` to write).
+
+### Requests
+
+| Request | Effect |
+|---|---|
+| `PUT Group/{id}` for an id the server does not have | **Creates** the cohort with that id (FHIR's update as create). This is how a client that chose the id itself (a device that was offline) creates one, and sending it again is harmless: it is then an update. The name must be unique (the Cohort Module checks it: **422**). |
+| `POST Group` | Creates the cohort; **the server gives the id**: HAPI replaces the id of a created resource, so a client that needs to know the id beforehand uses `PUT`. |
+| `PUT Group/{id}` for an existing id | Updates the attributes (name, description, type, location, `active`). **A Group without `member` leaves the members as they are.** With `member`, it **sets the members to those listed**, as FHIR says: listed patients that are missing are added, patients no longer listed are voided. `active: false` voids the cohort. |
+| `DELETE Group/{id}` | Voids the cohort. |
+| `POST Group/{id}/$add-members` | Adds the patients (see below). |
+| `POST Group/{id}/$remove-members` | Ends the membership of the patients (see below). |
+| `PATCH Group/{id}` | Not supported (FHIR2's Group provider has no patch). |
+
+`$add-members` and `$remove-members` take a `Parameters` resource with one `patient` parameter per patient, each a `valueReference` to `Patient/<uuid>`:
+
+```json
+{ "resourceType": "Parameters",
+  "parameter": [ { "name": "patient", "valueReference": { "reference": "Patient/<uuid>" } } ] }
+```
+
+They answer with the Group as it is afterwards. They change what is asked and nothing else, so two clients that edit the same cohort do not undo each other, and a request sent twice does no harm: a patient who already is a member is not added again, a patient who is not a member is ignored when removed. One unknown patient adds nobody (**422**); an unknown Group is **404**; a parameter that is not a `Patient` reference, or no parameter at all, is **400**. A membership that was removed is voided, not deleted, so the history stays; adding the patient again starts a new membership.
+
+Use these two for members and `PUT` for the attributes: `PUT` with a member list replaces it, which is wrong for a client that was offline while someone else edited the cohort.
+
+### What a Group carries
+
+| Group | Cohort |
+|---|---|
+| `name` | name |
+| extension `http://fhir.openmrs.org/ext/group/description` (string) | description |
+| extension `http://fhir.openmrs.org/ext/group/cohort-type` (string or reference, the cohort type uuid) | cohort type; unknown uuid: 422 |
+| extension `http://fhir.openmrs.org/ext/group/location` (string or reference, the location uuid) | location; unknown uuid: 422 |
+| `active` | `false` voids the cohort |
+| `member[].entity` (`Patient/<uuid>`) | membership of that patient; unknown patient: 422 |
+| `member[].period.start` / `.end`, `member[].inactive` | start and end date of the membership (`inactive` without an end ends it now) |
+
+### What a read adds
+
+Reads (one Group and searches alike) are FHIR2's own, completed from the cohort:
+
+| Group | From |
+|---|---|
+| `member`, `quantity` | the memberships that are active (not voided, started and not ended); FHIR2 alone lists voided ones too |
+| `managingEntity` | the creator (FHIR2) |
+| `meta.lastUpdated` | the last change (FHIR2) |
+| extension `.../ext/group/location` | `valueReference` `Location/<uuid>` with the name as `display` |
+| extension `.../ext/group/cohort-type` | `valueReference` `CohortType/<uuid>` with the name as `display` |
+| extension `.../ext/group/date-created`, `.../ext/group/date-changed` | `valueDateTime` |
+| extension `.../ext/group/changed-by` | `valueReference` with the person's name as `display` and the user uuid as `identifier.value` |
+| extension `.../ext/group/attribute` (one per active attribute) | sub-extensions `type` (the attribute type's name) and `value`, both strings |
+
+These extensions are read only: they are ignored when a Group is sent. A client that wants a light list can ask for `Group?_elements=id,name,quantity,extension,managingEntity,meta`.
+
+### Deployment notes
+
+* `FhirGroupServiceExtensionImpl` and `GroupTranslatorExtensionImpl` are `@Primary` beans that replace FHIR2's Group service and translator. Another module that does the same (the `icrc` module might) would make the server fail to start with two primary beans: remove one of them.
+* `GroupMembershipFhirResourceProvider` is a second provider of the type Group, for the two operations. HAPI merges the methods of every provider of a resource type (checked in `RestfulServer.findResourceMethods` of HAPI 5.7), but this has not been run on a server: if the server refuses to start with a message about a provider of Group, the two methods belong in a subclass of FHIR2's `GroupFhirResourceProvider`.
+* Never delete a cohort member with `?purge=true` through the Cohort Module's REST: it tries to delete the patient row.
