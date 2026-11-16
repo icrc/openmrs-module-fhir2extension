@@ -59,23 +59,23 @@ import org.openmrs.module.fhir2extension.FhirConstants;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class GroupTranslatorExtensionImplTest {
-
+	
 	private static final String UUID = "11111111-1111-1111-1111-111111111111";
-
+	
 	@Mock
 	private CohortService cohortService;
-
+	
 	@SuppressWarnings("unchecked")
 	private final PractitionerReferenceTranslator<User> practitioners = mock(PractitionerReferenceTranslator.class);
-
+	
 	private final GroupMemberTranslator memberTranslator = mock(GroupMemberTranslator.class);
-
+	
 	private GroupTranslatorExtensionImpl translator;
-
+	
 	@Before
 	public void setUp() {
 		translator = new GroupTranslatorExtensionImpl() {
-
+			
 			{
 				setPractitionerReferenceTranslator(practitioners);
 				setGroupMemberTranslator(memberTranslator);
@@ -87,7 +87,7 @@ public class GroupTranslatorExtensionImplTest {
 		GroupMember voidedMember = new GroupMember(new Reference("Patient/voided"));
 		when(memberTranslator.toFhirResource(1)).thenReturn(voidedMember);
 	}
-
+	
 	@Test
 	public void toFhirResource_shouldListOnlyTheActiveMembersAndAddTheDetails() {
 		Cohort core = core();
@@ -104,27 +104,28 @@ public class GroupTranslatorExtensionImplTest {
 		voided.setCohort(own);
 		own.getCohortMembers().add(voided);
 		when(cohortService.getCohortMByUuid(UUID)).thenReturn(own);
-
+		
 		Group group = translator.toFhirResource(core);
-
+		
 		assertThat(group.getMember(), hasSize(1));
-		assertThat(group.getMember().get(0).getEntity().getReference(), equalTo("Patient/aaaaaaaa-0000-0000-0000-000000000000"));
+		assertThat(group.getMember().get(0).getEntity().getReference(),
+		    equalTo("Patient/aaaaaaaa-0000-0000-0000-000000000000"));
 		assertThat(group.getQuantity(), equalTo(1));
 		assertThat(group.getExtensionByUrl(FhirConstants.GROUP_DATE_CREATED_EXTENSION_URL).hasValue(), equalTo(true));
 		assertThat(group.getManagingEntity().getReference(), equalTo("Practitioner/p"));
 	}
-
+	
 	@Test
 	public void toFhirResource_shouldAnswerWhatFhir2AnswersForACohortTheModuleDoesNotKnow() {
 		Cohort core = core();
 		when(cohortService.getCohortMByUuid(UUID)).thenReturn(null);
-
+		
 		Group group = translator.toFhirResource(core);
-
+		
 		assertThat(group.getIdElement().getIdPart(), equalTo(UUID));
 		assertThat(group.getExtensionByUrl(FhirConstants.GROUP_DATE_CREATED_EXTENSION_URL), nullValue());
 	}
-
+	
 	private static Cohort core() {
 		Cohort core = new Cohort();
 		core.setUuid(UUID);
@@ -134,7 +135,7 @@ public class GroupTranslatorExtensionImplTest {
 		core.setCreator(new User());
 		return core;
 	}
-
+	
 	private static Patient patient(String uuid) {
 		Patient patient = new Patient();
 		patient.setUuid(uuid);

@@ -40,18 +40,18 @@ public final class FhirConstants {
 	public static final String FHIR_QUESTIONNAIRE_TYPE = "FHIR Questionnaire";
 	
 	public static final String GROUP_COHORT_TYPE_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/cohort-type";
-
+	
 	public static final String GROUP_LOCATION_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/location";
-
+	
 	public static final String GROUP_DATE_CREATED_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/date-created";
-
+	
 	public static final String GROUP_CHANGED_BY_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/changed-by";
-
+	
 	public static final String GROUP_DATE_CHANGED_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/date-changed";
-
+	
 	/** A custom attribute of the cohort, with a sub-extension {@code type} and one {@code value}. */
 	public static final String GROUP_ATTRIBUTE_EXTENSION_URL = "http://fhir.openmrs.org/ext/group/attribute";
-
+	
 	public static final String FORM_SYSTEM_URI = "http://fhir.openmrs.org/core/StructureDefinition/omrs-form";
 	
 }
