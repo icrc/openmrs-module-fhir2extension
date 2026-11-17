@@ -131,6 +131,18 @@ Reads (one Group and searches alike) are FHIR2's own, completed from the cohort:
 
 These extensions are read only: they are ignored when a Group is sent. A client that wants a light list can ask for `Group?_elements=id,name,quantity,extension,managingEntity,meta`.
 
+### Search
+
+`GET Group` searches the cohorts by what FHIR2 cannot search them by (its own provider has only `member`). The three parameters can be combined, and each answer is a Group as a read gives it:
+
+| Parameter | Matches |
+|---|---|
+| `name` | cohorts whose name matches (the Cohort Module's own matching) |
+| `cohort-type` | cohorts of the type with that uuid; an unknown type matches nothing |
+| `location` | cohorts of the location with that uuid (`Location/<uuid>` is accepted too) |
+
+Voided cohorts are never found. The patients of a Group are found with FHIR2's own `Patient?_has:Group:member:id=<uuid>`.
+
 ### Deployment notes
 
 * `FhirGroupServiceExtensionImpl` and `GroupTranslatorExtensionImpl` are `@Primary` beans that replace FHIR2's Group service and translator. Another module that does the same (the `icrc` module might) would make the server fail to start with two primary beans: remove one of them.
