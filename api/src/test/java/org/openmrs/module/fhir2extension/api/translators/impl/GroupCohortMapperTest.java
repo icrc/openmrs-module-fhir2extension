@@ -55,9 +55,9 @@ import org.openmrs.module.cohort.CohortType;
 import org.openmrs.module.fhir2extension.FhirConstants;
 
 public class GroupCohortMapperTest {
-
+	
 	private final GroupCohortMapper mapper = new GroupCohortMapper();
-
+	
 	@Test
 	public void withDetails_shouldTellWhereTheCohortIsItsTypeAndWhoChangedItWhen() {
 		CohortM cohort = new CohortM();
@@ -79,38 +79,40 @@ public class GroupCohortMapperTest {
 		person.addName(new PersonName("Ann", null, "Smith"));
 		editor.setPerson(person);
 		cohort.setChangedBy(editor);
-
+		
 		Group group = mapper.withDetails(new Group(), cohort);
-
+		
 		Reference locationValue = (Reference) group.getExtensionByUrl(FhirConstants.GROUP_LOCATION_EXTENSION_URL).getValue();
 		assertThat(locationValue.getReference(), equalTo("Location/loc-1"));
 		assertThat(locationValue.getDisplay(), equalTo("Clinic A"));
 		Reference typeValue = (Reference) group.getExtensionByUrl(FhirConstants.GROUP_COHORT_TYPE_EXTENSION_URL).getValue();
 		assertThat(typeValue.getReference(), equalTo("CohortType/type-1"));
 		assertThat(typeValue.getDisplay(), equalTo("Diabetes"));
-		assertThat(((DateTimeType) group.getExtensionByUrl(FhirConstants.GROUP_DATE_CREATED_EXTENSION_URL).getValue())
-				.getValue(), equalTo(created));
-		assertThat(((DateTimeType) group.getExtensionByUrl(FhirConstants.GROUP_DATE_CHANGED_EXTENSION_URL).getValue())
-				.getValue(), equalTo(changed));
+		assertThat(
+		    ((DateTimeType) group.getExtensionByUrl(FhirConstants.GROUP_DATE_CREATED_EXTENSION_URL).getValue()).getValue(),
+		    equalTo(created));
+		assertThat(
+		    ((DateTimeType) group.getExtensionByUrl(FhirConstants.GROUP_DATE_CHANGED_EXTENSION_URL).getValue()).getValue(),
+		    equalTo(changed));
 		Reference changedBy = (Reference) group.getExtensionByUrl(FhirConstants.GROUP_CHANGED_BY_EXTENSION_URL).getValue();
 		assertThat(changedBy.getDisplay(), equalTo("Ann Smith"));
 		assertThat(changedBy.getIdentifier().getValue(), equalTo("user-9"));
 	}
-
+	
 	@Test
 	public void withDetails_shouldSkipWhatTheCohortDoesNotHaveAndKeepWhatTheGroupSays() {
 		Group group = new Group();
 		group.addExtension().setUrl(FhirConstants.GROUP_LOCATION_EXTENSION_URL).setValue(new StringType("loc-old"));
-
+		
 		mapper.withDetails(group, new CohortM());
-
+		
 		assertThat(group.getExtensionByUrl(FhirConstants.GROUP_COHORT_TYPE_EXTENSION_URL), nullValue());
 		assertThat(group.getExtensionByUrl(FhirConstants.GROUP_DATE_CHANGED_EXTENSION_URL), nullValue());
 		assertThat(group.getExtensionByUrl(FhirConstants.GROUP_CHANGED_BY_EXTENSION_URL), nullValue());
 		assertThat(group.getExtensionByUrl(FhirConstants.GROUP_LOCATION_EXTENSION_URL).getValue().primitiveValue(),
-				equalTo("loc-old"));
+		    equalTo("loc-old"));
 	}
-
+	
 	@Test
 	public void withDetails_shouldListTheActiveAttributesWithTheirTypeAndValue() {
 		CohortM cohort = new CohortM();
@@ -118,25 +120,25 @@ public class GroupCohortMapperTest {
 		CohortAttribute voided = attribute("Old", "gone");
 		voided.setVoided(true);
 		cohort.addAttribute(voided);
-
+		
 		Group group = mapper.withDetails(new Group(), cohort);
-
+		
 		List<Extension> attributes = group.getExtensionsByUrl(FhirConstants.GROUP_ATTRIBUTE_EXTENSION_URL);
 		assertThat(attributes, hasSize(1));
 		assertThat(attributes.get(0).getExtensionByUrl("type").getValue().primitiveValue(), equalTo("Funding"));
 		assertThat(attributes.get(0).getExtensionByUrl("value").getValue().primitiveValue(), equalTo("Ministry"));
 	}
-
+	
 	@Test
 	public void withDetails_shouldNotRepeatTheAttributesWhenCalledTwice() {
 		CohortM cohort = new CohortM();
 		cohort.addAttribute(attribute("Funding", "Ministry"));
-
+		
 		Group group = mapper.withDetails(mapper.withDetails(new Group(), cohort), cohort);
-
+		
 		assertThat(group.getExtensionsByUrl(FhirConstants.GROUP_ATTRIBUTE_EXTENSION_URL), hasSize(1));
 	}
-
+	
 	private static CohortAttribute attribute(String typeName, String value) {
 		CohortAttributeType type = new CohortAttributeType();
 		type.setName(typeName);

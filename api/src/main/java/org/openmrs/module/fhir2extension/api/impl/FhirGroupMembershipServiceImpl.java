@@ -55,37 +55,37 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class FhirGroupMembershipServiceImpl implements FhirGroupMembershipService {
-
+	
 	private static final String REMOVED_REASON = "Removed through FHIR";
-
+	
 	@Autowired
 	private CohortService cohortService;
-
+	
 	@Autowired
 	private CohortMemberService cohortMemberService;
-
+	
 	@Autowired
 	private FhirGroupService groupService;
-
+	
 	@Autowired
 	private GroupCohortMapper mapper;
-
+	
 	void setCohortService(CohortService cohortService) {
 		this.cohortService = cohortService;
 	}
-
+	
 	void setCohortMemberService(CohortMemberService cohortMemberService) {
 		this.cohortMemberService = cohortMemberService;
 	}
-
+	
 	void setGroupService(FhirGroupService groupService) {
 		this.groupService = groupService;
 	}
-
+	
 	void setMapper(GroupCohortMapper mapper) {
 		this.mapper = mapper;
 	}
-
+	
 	@Override
 	@Transactional
 	public Group addMembers(String groupUuid, Collection<String> patientUuids) {
@@ -111,7 +111,7 @@ public class FhirGroupMembershipServiceImpl implements FhirGroupMembershipServic
 		flush();
 		return groupService.get(groupUuid);
 	}
-
+	
 	@Override
 	@Transactional
 	public Group removeMembers(String groupUuid, Collection<String> patientUuids) {
@@ -128,7 +128,7 @@ public class FhirGroupMembershipServiceImpl implements FhirGroupMembershipServic
 		flush();
 		return groupService.get(groupUuid);
 	}
-
+	
 	private CohortM cohortOf(String groupUuid) {
 		CohortM cohort = groupUuid == null ? null : cohortService.getCohortMByUuid(groupUuid);
 		if (cohort == null) {
@@ -136,14 +136,14 @@ public class FhirGroupMembershipServiceImpl implements FhirGroupMembershipServic
 		}
 		return cohort;
 	}
-
+	
 	private static Set<String> distinct(Collection<String> patientUuids) {
 		if (patientUuids == null || patientUuids.isEmpty()) {
 			throw new InvalidRequestException("At least one patient is needed");
 		}
 		return new LinkedHashSet<>(patientUuids);
 	}
-
+	
 	private static Set<String> activePatients(CohortM cohort, Date now) {
 		Set<String> uuids = new LinkedHashSet<>();
 		for (CohortMember membership : cohort.getCohortMembers()) {
@@ -153,7 +153,7 @@ public class FhirGroupMembershipServiceImpl implements FhirGroupMembershipServic
 		}
 		return uuids;
 	}
-
+	
 	/** Writes what was saved, so that FHIR2's read finds it. */
 	void flush() {
 		Context.flushSession();

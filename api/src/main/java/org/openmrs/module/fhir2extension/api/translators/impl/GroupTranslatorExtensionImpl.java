@@ -40,31 +40,31 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
- * The Group FHIR2 builds from a core cohort, completed from the cohort module's own entity: the members
- * (and the quantity) are the active ones only, and the cohort's location, type, dates, last editor and
- * attributes are added (see {@link GroupCohortMapper#withDetails}).
+ * The Group FHIR2 builds from a core cohort, completed from the cohort module's own entity: the
+ * members (and the quantity) are the active ones only, and the cohort's location, type, dates, last
+ * editor and attributes are added (see {@link GroupCohortMapper#withDetails}).
  * <p>
- * It sits in the translator, not in the service, so that a search gives the same answer as a read: a
- * list of cohorts that counted voided members would not agree with the cohort once opened.
+ * It sits in the translator, not in the service, so that a search gives the same answer as a read:
+ * a list of cohorts that counted voided members would not agree with the cohort once opened.
  */
 @Primary
 @Component
 public class GroupTranslatorExtensionImpl extends GroupTranslatorImpl {
-
+	
 	@Autowired
 	private CohortService cohortService;
-
+	
 	@Autowired
 	private GroupCohortMapper mapper;
-
+	
 	void setCohortService(CohortService cohortService) {
 		this.cohortService = cohortService;
 	}
-
+	
 	void setMapper(GroupCohortMapper mapper) {
 		this.mapper = mapper;
 	}
-
+	
 	@Override
 	public Group toFhirResource(Cohort cohort) {
 		Group group = super.toFhirResource(cohort);

@@ -62,37 +62,37 @@ import org.springframework.transaction.annotation.Transactional;
 @Primary
 @Component
 public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
-
+	
 	private static final String REMOVED_REASON = "Removed through FHIR";
-
+	
 	@Autowired
 	private CohortService cohortService;
-
+	
 	@Autowired
 	private CohortMemberService cohortMemberService;
-
+	
 	@Autowired
 	private GroupCohortMapper mapper;
-
+	
 	void setCohortService(CohortService cohortService) {
 		this.cohortService = cohortService;
 	}
-
+	
 	void setCohortMemberService(CohortMemberService cohortMemberService) {
 		this.cohortMemberService = cohortMemberService;
 	}
-
+	
 	void setMapper(GroupCohortMapper mapper) {
 		this.mapper = mapper;
 	}
-
+	
 	@Override
 	@Transactional
 	public Group create(@Nonnull Group newResource) {
 		if (newResource == null) {
 			throw new InvalidRequestException("A resource of type Group must be supplied");
 		}
-
+		
 		CohortM cohort = new CohortM();
 		if (newResource.getIdElement().hasIdPart()) {
 			String uuid = newResource.getIdElement().getIdPart();
@@ -105,13 +105,13 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 		Date now = new Date();
 		cohort.setStartDate(now);
 		cohort.setGroupCohort(false);
-
+		
 		CohortM saved = cohortService.saveCohortM(cohort);
 		syncMembers(saved, newResource, now);
 		flush();
 		return get(saved.getUuid());
 	}
-
+	
 	@Override
 	@Transactional
 	public Group update(@Nonnull String uuid, @Nonnull Group updatedResource) {
@@ -127,14 +127,14 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 		if (!updatedResource.getIdElement().getIdPart().equals(uuid)) {
 			throw new InvalidRequestException("Group id does not match resource id.");
 		}
-
+		
 		CohortM cohort = cohortService.getCohortMByUuid(uuid);
 		if (cohort == null) {
 			// Update as create (FHIR allows it): the client chooses the id. HAPI replaces the id of a POSTed
 			// resource with none, so a PUT is the only way to keep an id made on a device that was offline.
 			return create(updatedResource);
 		}
-
+		
 		boolean inactive = updatedResource.hasActive() && !updatedResource.getActive();
 		mapper.toCohort(cohort, updatedResource);
 		if (inactive) {
@@ -143,7 +143,7 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 			return updatedResource;
 		}
 		CohortM saved = cohortService.saveCohortM(cohort);
-
+		
 		// A Group sent without members changes the cohort and leaves its members as they are: a client
 		// that edits the name must not empty the list, and FHIR JSON cannot tell "none" from "absent".
 		if (updatedResource.hasMember()) {
@@ -152,7 +152,7 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 		flush();
 		return get(uuid);
 	}
-
+	
 	@Override
 	@Transactional
 	public void delete(@Nonnull String uuid) {
@@ -165,11 +165,11 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 		}
 		cohortService.voidCohortM(cohort, "Deleted through FHIR");
 	}
-
+	
 	/** Makes the active memberships of {@code cohort} those the Group lists. */
 	private void syncMembers(CohortM cohort, Group group, Date now) {
 		Map<String, Group.GroupMemberComponent> wanted = mapper.membersByPatient(group);
-
+		
 		for (CohortMember membership : cohort.getCohortMembers()) {
 			if (!GroupCohortMapper.isActive(membership, now) || membership.getPatient() == null) {
 				continue;
@@ -185,7 +185,7 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 				}
 			}
 		}
-
+		
 		for (Map.Entry<String, Group.GroupMemberComponent> entry : wanted.entrySet()) {
 			CohortMember membership = new CohortMember(mapper.patientOf(entry.getKey()));
 			membership.setCohort(cohort);
@@ -194,7 +194,7 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 			cohort.getCohortMembers().add(cohortMemberService.saveCohortMember(membership));
 		}
 	}
-
+	
 	/** Writes what was saved, so that FHIR2's read finds it. */
 	void flush() {
 		Context.flushSession();

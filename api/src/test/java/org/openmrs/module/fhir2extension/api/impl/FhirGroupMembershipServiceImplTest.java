@@ -66,29 +66,29 @@ import org.openmrs.module.fhir2extension.api.translators.impl.GroupCohortMapper;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FhirGroupMembershipServiceImplTest {
-
+	
 	private static final String GROUP_UUID = "11111111-1111-1111-1111-111111111111";
-
+	
 	private static final String PATIENT_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-
+	
 	private static final String PATIENT_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-
+	
 	@Mock
 	private CohortService cohortService;
-
+	
 	@Mock
 	private CohortMemberService cohortMemberService;
-
+	
 	@Mock
 	private PatientService patientService;
-
+	
 	@Mock
 	private FhirGroupService groupService;
-
+	
 	private FhirGroupMembershipServiceImpl service;
-
+	
 	private CohortM cohort;
-
+	
 	@Before
 	public void setUp() {
 		GroupCohortMapper mapper = new GroupCohortMapper();
@@ -108,13 +108,13 @@ public class FhirGroupMembershipServiceImplTest {
 		when(cohortMemberService.saveCohortMember(any(CohortMember.class))).thenAnswer(i -> i.getArgument(0));
 		when(groupService.get(GROUP_UUID)).thenReturn(new Group());
 	}
-
+	
 	@Test
 	public void addMembers_shouldAddThePatientsThatAreNotMembersYet() {
 		member(PATIENT_A, false);
-
+		
 		service.addMembers(GROUP_UUID, Arrays.asList(PATIENT_A, PATIENT_B));
-
+		
 		ArgumentCaptor<CohortMember> saved = ArgumentCaptor.forClass(CohortMember.class);
 		verify(cohortMemberService, times(1)).saveCohortMember(saved.capture());
 		assertThat(saved.getValue().getPatient().getUuid(), equalTo(PATIENT_B));
@@ -122,25 +122,25 @@ public class FhirGroupMembershipServiceImplTest {
 		assertThat(saved.getValue().getStartDate() != null, equalTo(true));
 		assertThat(cohort.getCohortMembers(), hasSize(2));
 	}
-
+	
 	@Test
 	public void addMembers_shouldDoNothingTheSecondTimeItIsSent() {
 		service.addMembers(GROUP_UUID, Arrays.asList(PATIENT_A, PATIENT_A));
 		service.addMembers(GROUP_UUID, Arrays.asList(PATIENT_A));
-
+		
 		verify(cohortMemberService, times(1)).saveCohortMember(any(CohortMember.class));
 		assertThat(cohort.getCohortMembers(), hasSize(1));
 	}
-
+	
 	@Test
 	public void addMembers_shouldAddAgainAPatientWhoseMembershipWasVoided() {
 		member(PATIENT_A, true);
-
+		
 		service.addMembers(GROUP_UUID, Arrays.asList(PATIENT_A));
-
+		
 		verify(cohortMemberService, times(1)).saveCohortMember(any(CohortMember.class));
 	}
-
+	
 	@Test
 	public void addMembers_shouldAddNobodyWhenOnePatientIsUnknown() {
 		try {
@@ -151,42 +151,42 @@ public class FhirGroupMembershipServiceImplTest {
 			verify(cohortMemberService, never()).saveCohortMember(any(CohortMember.class));
 		}
 	}
-
+	
 	@Test(expected = ResourceNotFoundException.class)
 	public void addMembers_shouldFailForAnUnknownGroup() {
 		service.addMembers("00000000-0000-0000-0000-000000000000", Arrays.asList(PATIENT_A));
 	}
-
+	
 	@Test(expected = InvalidRequestException.class)
 	public void addMembers_shouldRefuseAnEmptyList() {
 		service.addMembers(GROUP_UUID, java.util.Collections.<String> emptyList());
 	}
-
+	
 	@Test
 	public void removeMembers_shouldVoidTheMembershipOfTheListedPatientsOnly() {
 		CohortMember a = member(PATIENT_A, false);
 		CohortMember b = member(PATIENT_B, false);
-
+		
 		service.removeMembers(GROUP_UUID, Arrays.asList(PATIENT_A));
-
+		
 		verify(cohortMemberService).voidCohortMember(a, "Removed through FHIR");
 		verify(cohortMemberService, never()).voidCohortMember(org.mockito.ArgumentMatchers.eq(b), anyString());
 	}
-
+	
 	@Test
 	public void removeMembers_shouldIgnoreAPatientWhoIsNotAMember() {
 		member(PATIENT_A, true);
-
+		
 		service.removeMembers(GROUP_UUID, Arrays.asList(PATIENT_A, PATIENT_B));
-
+		
 		verify(cohortMemberService, never()).voidCohortMember(any(CohortMember.class), anyString());
 	}
-
+	
 	@Test(expected = ResourceNotFoundException.class)
 	public void removeMembers_shouldFailForAnUnknownGroup() {
 		service.removeMembers("00000000-0000-0000-0000-000000000000", Arrays.asList(PATIENT_A));
 	}
-
+	
 	private CohortMember member(String patientUuid, boolean voided) {
 		CohortMember membership = new CohortMember(patient(patientUuid));
 		membership.setStartDate(new Date(System.currentTimeMillis() - 86400000L));
@@ -195,7 +195,7 @@ public class FhirGroupMembershipServiceImplTest {
 		cohort.getCohortMembers().add(membership);
 		return membership;
 	}
-
+	
 	private static Patient patient(String uuid) {
 		Patient patient = new Patient();
 		patient.setUuid(uuid);

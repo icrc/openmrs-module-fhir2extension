@@ -35,23 +35,24 @@ import java.util.Collection;
 import org.hl7.fhir.r4.model.Group;
 
 /**
- * Adds patients to a cohort and removes them, by what changes and not by the whole list: two clients
- * that edit the same cohort do not undo each other, and sending a change twice does no harm.
+ * Adds patients to a cohort and removes them, by what changes and not by the whole list: two
+ * clients that edit the same cohort do not undo each other, and sending a change twice does no
+ * harm.
  */
 public interface FhirGroupMembershipService {
-
+	
 	/**
 	 * Makes the patients members of the group. Those that already are members are left as they are.
 	 * Nothing is added when one of the patients is unknown (422); an unknown group is a 404.
-	 *
+	 * 
 	 * @return the group as it is afterwards
 	 */
 	Group addMembers(String groupUuid, Collection<String> patientUuids);
-
+	
 	/**
-	 * Ends the membership of the patients (it is voided, so the history stays). Patients that are not
-	 * members are ignored; an unknown group is a 404.
-	 *
+	 * Ends the membership of the patients (it is voided, so the history stays). Patients that are
+	 * not members are ignored; an unknown group is a 404.
+	 * 
 	 * @return the group as it is afterwards
 	 */
 	Group removeMembers(String groupUuid, Collection<String> patientUuids);

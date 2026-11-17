@@ -49,57 +49,59 @@ import org.junit.Test;
 import org.openmrs.module.fhir2extension.api.FhirGroupMembershipService;
 
 public class GroupMembershipFhirResourceProviderTest {
-
+	
 	private static final String GROUP = "11111111-1111-1111-1111-111111111111";
-
+	
 	private final FhirGroupMembershipService service = mock(FhirGroupMembershipService.class);
-
+	
 	private GroupMembershipFhirResourceProvider provider;
-
+	
 	@Before
 	public void setUp() {
 		provider = new GroupMembershipFhirResourceProvider();
 		provider.setMembershipService(service);
 	}
-
+	
 	@Test
 	public void addMembers_shouldPassThePatientUuidsAndAnswerTheGroup() {
 		Group answer = new Group();
 		when(service.addMembers(GROUP, Arrays.asList("p1", "p2"))).thenReturn(answer);
-
+		
 		Group result = provider.addMembers(new IdType("Group", GROUP),
-				Arrays.asList(new Reference("Patient/p1"), new Reference("Patient/p2")));
-
+		    Arrays.asList(new Reference("Patient/p1"), new Reference("Patient/p2")));
+		
 		assertThat(result == answer, equalTo(true));
 	}
-
+	
 	@Test
 	public void removeMembers_shouldPassThePatientUuids() {
 		provider.removeMembers(new IdType("Group", GROUP), Collections.singletonList(new Reference("Patient/p1")));
-
+		
 		verify(service).removeMembers(GROUP, Collections.singletonList("p1"));
 	}
-
+	
 	@Test(expected = InvalidRequestException.class)
 	public void addMembers_shouldRefuseAReferenceThatIsNotAPatient() {
 		provider.addMembers(new IdType("Group", GROUP), Collections.singletonList(new Reference("Practitioner/p1")));
 	}
-
+	
 	@Test(expected = InvalidRequestException.class)
 	public void addMembers_shouldRefuseAReferenceWithoutAnId() {
 		provider.addMembers(new IdType("Group", GROUP), Collections.singletonList(new Reference()));
 	}
-
+	
 	@Test(expected = InvalidRequestException.class)
 	public void removeMembers_shouldRefuseNoPatient() {
 		provider.removeMembers(new IdType("Group", GROUP), Collections.<Reference> emptyList());
 	}
-
+	
 	@Test
 	public void theOperationsAreNamedAsTheContractSays() throws Exception {
-		assertThat(provider.getClass().getMethod("addMembers", IdType.class, java.util.List.class)
-				.getAnnotation(Operation.class).name(), equalTo("$add-members"));
-		assertThat(provider.getClass().getMethod("removeMembers", IdType.class, java.util.List.class)
-				.getAnnotation(Operation.class).name(), equalTo("$remove-members"));
+		assertThat(
+		    provider.getClass().getMethod("addMembers", IdType.class, java.util.List.class).getAnnotation(Operation.class)
+		            .name(), equalTo("$add-members"));
+		assertThat(
+		    provider.getClass().getMethod("removeMembers", IdType.class, java.util.List.class)
+		            .getAnnotation(Operation.class).name(), equalTo("$remove-members"));
 	}
 }

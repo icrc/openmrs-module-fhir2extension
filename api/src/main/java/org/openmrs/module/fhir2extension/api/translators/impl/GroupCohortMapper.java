@@ -70,34 +70,34 @@ import org.springframework.stereotype.Component;
  * Moves what a FHIR Group says into the cohort module's entities ({@link CohortM} and its
  * {@link CohortMember}s), and the active members of a cohort back into a Group.
  * <p>
- * FHIR2 maps a Group to the core cohort, which the cohort module refuses to save while it is
- * active ("A standard cohort should not be created while the cohort module is active"). The
- * extension works on the module's own entities instead.
+ * FHIR2 maps a Group to the core cohort, which the cohort module refuses to save while it is active
+ * ("A standard cohort should not be created while the cohort module is active"). The extension
+ * works on the module's own entities instead.
  */
 @Component
 public class GroupCohortMapper {
-
+	
 	@Autowired
 	private PatientService patientService;
-
+	
 	@Autowired
 	private LocationService locationService;
-
+	
 	@Autowired
 	private CohortTypeService cohortTypeService;
-
+	
 	public void setPatientService(PatientService patientService) {
 		this.patientService = patientService;
 	}
-
+	
 	public void setLocationService(LocationService locationService) {
 		this.locationService = locationService;
 	}
-
+	
 	public void setCohortTypeService(CohortTypeService cohortTypeService) {
 		this.cohortTypeService = cohortTypeService;
 	}
-
+	
 	/**
 	 * Copies what the Group says about the cohort itself (not its members) into {@code cohort}.
 	 * Whatever the Group does not mention is left as it is.
@@ -106,12 +106,12 @@ public class GroupCohortMapper {
 		if (group.hasName()) {
 			cohort.setName(group.getName());
 		}
-
+		
 		Extension description = group.getExtensionByUrl(OPENMRS_FHIR_EXT_GROUP_DESCRIPTION);
 		if (description != null && description.hasValue()) {
 			cohort.setDescription(description.getValue().primitiveValue());
 		}
-
+		
 		String cohortTypeUuid = uuidOf(group.getExtensionByUrl(GROUP_COHORT_TYPE_EXTENSION_URL));
 		if (cohortTypeUuid != null) {
 			CohortType cohortType = cohortTypeService.getCohortTypeByUuid(cohortTypeUuid);
@@ -120,7 +120,7 @@ public class GroupCohortMapper {
 			}
 			cohort.setCohortType(cohortType);
 		}
-
+		
 		String locationUuid = uuidOf(group.getExtensionByUrl(GROUP_LOCATION_EXTENSION_URL));
 		if (locationUuid != null) {
 			Location location = locationService.getLocationByUuid(locationUuid);
@@ -129,7 +129,7 @@ public class GroupCohortMapper {
 			}
 			cohort.setLocation(location);
 		}
-
+		
 		if (group.hasActive()) {
 			cohort.setVoided(!group.getActive());
 			if (group.getActive()) {
@@ -140,7 +140,7 @@ public class GroupCohortMapper {
 		}
 		return cohort;
 	}
-
+	
 	/** The members the Group names, by patient uuid, in the order given. */
 	public Map<String, Group.GroupMemberComponent> membersByPatient(Group group) {
 		Map<String, Group.GroupMemberComponent> members = new LinkedHashMap<>();
@@ -153,7 +153,7 @@ public class GroupCohortMapper {
 		}
 		return members;
 	}
-
+	
 	public Patient patientOf(String uuid) {
 		Patient patient = patientService.getPatientByUuid(uuid);
 		if (patient == null) {
@@ -161,12 +161,12 @@ public class GroupCohortMapper {
 		}
 		return patient;
 	}
-
+	
 	/** When the membership starts: the period of the member, or {@code fallback}. */
 	public Date startOf(Group.GroupMemberComponent member, Date fallback) {
 		return member.hasPeriod() && member.getPeriod().hasStart() ? member.getPeriod().getStart() : fallback;
 	}
-
+	
 	/** When the membership ends: the period of the member, now if it is inactive, else none. */
 	public Date endOf(Group.GroupMemberComponent member, Date now) {
 		if (member.hasPeriod() && member.getPeriod().hasEnd()) {
@@ -174,11 +174,11 @@ public class GroupCohortMapper {
 		}
 		return member.hasInactive() && member.getInactive() ? now : null;
 	}
-
+	
 	/**
 	 * Makes the members of {@code group} those that are active in {@code cohort}: a voided or an
-	 * ended membership is not listed, and the quantity follows. Entries already in the Group for
-	 * an active member are kept as they are (display, extensions).
+	 * ended membership is not listed, and the quantity follows. Entries already in the Group for an
+	 * active member are kept as they are (display, extensions).
 	 */
 	public Group withActiveMembers(Group group, CohortM cohort) {
 		Date now = new Date();
@@ -212,11 +212,12 @@ public class GroupCohortMapper {
 		group.setQuantity(members.size());
 		return group;
 	}
-
+	
 	/**
-	 * Adds what the Group does not say by itself and a client needs to show the cohort: where it is, of
-	 * which type, who created and last changed it and when, and the cohort module's own attributes.
-	 * Everything is read only: {@link #toCohort} ignores these extensions when a Group is written.
+	 * Adds what the Group does not say by itself and a client needs to show the cohort: where it
+	 * is, of which type, who created and last changed it and when, and the cohort module's own
+	 * attributes. Everything is read only: {@link #toCohort} ignores these extensions when a Group
+	 * is written.
 	 * <p>
 	 * The creator is not repeated here: FHIR2 already sets it as {@code Group.managingEntity}.
 	 */
@@ -254,17 +255,16 @@ public class GroupCohortMapper {
 		}
 		return group;
 	}
-
+	
 	/** A user as a reference that shows their name; the uuid goes in the identifier. */
 	private static Reference userReference(User user) {
 		Reference reference = new Reference();
-		reference.setDisplay(user.getPerson() != null && user.getPerson().getPersonName() != null
-				? user.getPerson().getPersonName().getFullName()
-				: user.getUsername());
+		reference.setDisplay(user.getPerson() != null && user.getPerson().getPersonName() != null ? user.getPerson()
+		        .getPersonName().getFullName() : user.getUsername());
 		reference.setIdentifier(new Identifier().setValue(user.getUuid()));
 		return reference;
 	}
-
+	
 	/** What an attribute holds, as text; a value that cannot be read is skipped. */
 	private static String valueOf(CohortAttribute attribute) {
 		try {
@@ -275,24 +275,24 @@ public class GroupCohortMapper {
 			return attribute.getValueReference();
 		}
 	}
-
+	
 	private static void replaceExtension(Group group, String url, Type value) {
 		group.getExtension().removeIf(extension -> url.equals(extension.getUrl()));
 		group.addExtension().setUrl(url).setValue(value);
 	}
-
+	
 	/** Not voided, started and not yet ended. */
 	public static boolean isActive(CohortMember membership, Date now) {
 		return !Boolean.TRUE.equals(membership.getVoided())
-				&& (membership.getStartDate() == null || !membership.getStartDate().after(now))
-				&& (membership.getEndDate() == null || !membership.getEndDate().before(now));
+		        && (membership.getStartDate() == null || !membership.getStartDate().after(now))
+		        && (membership.getEndDate() == null || !membership.getEndDate().before(now));
 	}
-
+	
 	/** The uuid an extension (a string or a reference) points at, or null. */
 	private static String uuidOf(Extension extension) {
 		return extension != null && extension.hasValue() ? uuidOf(extension.getValue()) : null;
 	}
-
+	
 	private static String uuidOf(Type value) {
 		if (value == null) {
 			return null;

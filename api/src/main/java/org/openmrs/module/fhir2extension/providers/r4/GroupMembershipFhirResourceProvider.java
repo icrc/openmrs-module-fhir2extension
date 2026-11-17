@@ -48,9 +48,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * The operations that change the members of a Group by what changes: {@code POST Group/[id]/$add-members}
- * and {@code POST Group/[id]/$remove-members}, each with one {@code patient} parameter (a reference to a
- * Patient) per patient. They answer with the Group as it is afterwards.
+ * The operations that change the members of a Group by what changes:
+ * {@code POST Group/[id]/$add-members} and {@code POST Group/[id]/$remove-members}, each with one
+ * {@code patient} parameter (a reference to a Patient) per patient. They answer with the Group as
+ * it is afterwards.
  * <p>
  * FHIR2's own provider of Group is left alone: a server merges the methods of every provider of a
  * resource type.
@@ -58,31 +59,31 @@ import org.springframework.stereotype.Component;
 @Component("groupMembershipFhirR4ResourceProvider")
 @R4Provider
 public class GroupMembershipFhirResourceProvider implements IResourceProvider {
-
+	
 	@Autowired
 	private FhirGroupMembershipService membershipService;
-
+	
 	void setMembershipService(FhirGroupMembershipService membershipService) {
 		this.membershipService = membershipService;
 	}
-
+	
 	@Override
 	public Class<? extends IBaseResource> getResourceType() {
 		return Group.class;
 	}
-
+	
 	@Operation(name = "$add-members", type = Group.class, idempotent = false)
 	public Group addMembers(@IdParam IdType id,
-			@OperationParam(name = "patient", min = 1, max = OperationParam.MAX_UNLIMITED) List<Reference> patients) {
+	        @OperationParam(name = "patient", min = 1, max = OperationParam.MAX_UNLIMITED) List<Reference> patients) {
 		return membershipService.addMembers(id.getIdPart(), patientUuids(patients));
 	}
-
+	
 	@Operation(name = "$remove-members", type = Group.class, idempotent = false)
 	public Group removeMembers(@IdParam IdType id,
-			@OperationParam(name = "patient", min = 1, max = OperationParam.MAX_UNLIMITED) List<Reference> patients) {
+	        @OperationParam(name = "patient", min = 1, max = OperationParam.MAX_UNLIMITED) List<Reference> patients) {
 		return membershipService.removeMembers(id.getIdPart(), patientUuids(patients));
 	}
-
+	
 	static List<String> patientUuids(List<Reference> patients) {
 		List<String> uuids = new ArrayList<>();
 		if (patients != null) {
