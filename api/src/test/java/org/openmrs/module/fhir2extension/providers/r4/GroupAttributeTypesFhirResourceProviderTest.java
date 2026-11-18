@@ -44,7 +44,7 @@ import org.openmrs.module.cohort.CohortAttributeType;
 import org.openmrs.module.cohort.api.CohortService;
 
 public class GroupAttributeTypesFhirResourceProviderTest {
-
+	
 	@Test
 	public void attributeTypes_shouldListTheTypesThatAreNotRetiredByName() {
 		CohortService service = mock(CohortService.class);
@@ -54,16 +54,16 @@ public class GroupAttributeTypesFhirResourceProviderTest {
 		    Arrays.asList(type("Funding", "u-funding", "Who pays"), retired, type("Cadence", "u-cadence", null)));
 		GroupAttributeTypesFhirResourceProvider provider = new GroupAttributeTypesFhirResourceProvider();
 		provider.setCohortService(service);
-
+		
 		Parameters answer = provider.attributeTypes();
-
+		
 		assertThat(answer.getParameter(), hasSize(2));
 		assertThat(answer.getParameter().get(0).getPart().get(0).getValue().primitiveValue(), equalTo("Cadence"));
 		assertThat(answer.getParameter().get(0).getPart(), hasSize(2));
 		assertThat(answer.getParameter().get(1).getPart().get(1).getValue().primitiveValue(), equalTo("u-funding"));
 		assertThat(answer.getParameter().get(1).getPart().get(2).getValue().primitiveValue(), equalTo("Who pays"));
 	}
-
+	
 	private static CohortAttributeType type(String name, String uuid, String description) {
 		CohortAttributeType type = new CohortAttributeType();
 		type.setName(name);

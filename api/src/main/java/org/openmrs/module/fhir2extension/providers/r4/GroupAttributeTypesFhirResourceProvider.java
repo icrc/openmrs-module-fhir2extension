@@ -55,19 +55,19 @@ import org.springframework.stereotype.Component;
 @Component("groupAttributeTypesFhirR4ResourceProvider")
 @R4Provider
 public class GroupAttributeTypesFhirResourceProvider implements IResourceProvider {
-
+	
 	@Autowired
 	private CohortService cohortService;
-
+	
 	void setCohortService(CohortService cohortService) {
 		this.cohortService = cohortService;
 	}
-
+	
 	@Override
 	public Class<? extends IBaseResource> getResourceType() {
 		return Group.class;
 	}
-
+	
 	@Operation(name = "$attribute-types", type = Group.class, idempotent = true)
 	public Parameters attributeTypes() {
 		List<CohortAttributeType> types = new ArrayList<>();

@@ -151,9 +151,9 @@ public class GroupCohortMapper {
 	}
 	
 	/**
-	 * Sets the attributes the Group lists (one extension per attribute, with the {@code type} name and the
-	 * {@code value} as text) on the saved {@code cohort}. An attribute the Group does not list is left as it
-	 * is; one listed with an empty value is voided. An unknown type: 422.
+	 * Sets the attributes the Group lists (one extension per attribute, with the {@code type} name
+	 * and the {@code value} as text) on the saved {@code cohort}. An attribute the Group does not
+	 * list is left as it is; one listed with an empty value is voided. An unknown type: 422.
 	 */
 	public void applyAttributes(CohortM cohort, Group group) {
 		for (Extension extension : group.getExtensionsByUrl(GROUP_ATTRIBUTE_EXTENSION_URL)) {
@@ -271,8 +271,8 @@ public class GroupCohortMapper {
 	/**
 	 * Adds what the Group does not say by itself and a client needs to show the cohort: where it
 	 * is, of which type, who created and last changed it and when, and the cohort module's own
-	 * attributes. {@link #toCohort} ignores these extensions when a Group is written; the attributes
-	 * are written by {@link #applyAttributes}.
+	 * attributes. {@link #toCohort} ignores these extensions when a Group is written; the
+	 * attributes are written by {@link #applyAttributes}.
 	 * <p>
 	 * The creator is not repeated here: FHIR2 already sets it as {@code Group.managingEntity}.
 	 */
