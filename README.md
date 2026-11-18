@@ -110,6 +110,7 @@ Use these two for members and `PUT` for the attributes: `PUT` with a member list
 | extension `http://fhir.openmrs.org/ext/group/description` (string) | description |
 | extension `http://fhir.openmrs.org/ext/group/cohort-type` (string or reference, the cohort type uuid) | cohort type; unknown uuid: 422 |
 | extension `http://fhir.openmrs.org/ext/group/location` (string or reference, the location uuid) | location; unknown uuid: 422 |
+| extension `.../ext/group/attribute` (one per attribute, sub-extensions `type` = the attribute type's name and `value` = text) | the attribute of that type is set (added or changed); a `value` that is empty voids it; an attribute that is not listed is left as it is; unknown type: 422 |
 | `active` | `false` voids the cohort |
 | `member[].entity` (`Patient/<uuid>`) | membership of that patient; unknown patient: 422 |
 | `member[].period.start` / `.end`, `member[].inactive` | start and end date of the membership (`inactive` without an end ends it now) |
@@ -129,7 +130,11 @@ Reads (one Group and searches alike) are FHIR2's own, completed from the cohort:
 | extension `.../ext/group/changed-by` | `valueReference` with the person's name as `display` and the user uuid as `identifier.value` |
 | extension `.../ext/group/attribute` (one per active attribute) | sub-extensions `type` (the attribute type's name) and `value`, both strings |
 
-These extensions are read only: they are ignored when a Group is sent. A client that wants a light list can ask for `Group?_elements=id,name,quantity,extension,managingEntity,meta`.
+The extensions of this table other than `attribute` are read only: they are ignored when a Group is sent. An attribute value is written as the text the Cohort Module stores for it, which is what a free text attribute shows; a type of another datatype (a date, a concept) needs its stored form. A client that wants a light list can ask for `Group?_elements=id,name,quantity,extension,managingEntity,meta`.
+
+### Attribute types
+
+`GET Group/$attribute-types` answers a `Parameters` resource with one `attributeType` parameter per attribute type that is not retired, ordered by name, with the parts `name` (what the `attribute` extension names as its `type`), `uuid` and, when there is one, `description`. A client uses it to offer the attributes a cohort can have.
 
 ### Search
 
