@@ -107,6 +107,7 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 		cohort.setGroupCohort(false);
 		
 		CohortM saved = cohortService.saveCohortM(cohort);
+		mapper.applyAttributes(saved, newResource);
 		syncMembers(saved, newResource, now);
 		flush();
 		return get(saved.getUuid());
@@ -143,6 +144,7 @@ public class FhirGroupServiceExtensionImpl extends FhirGroupServiceImpl {
 			return updatedResource;
 		}
 		CohortM saved = cohortService.saveCohortM(cohort);
+		mapper.applyAttributes(saved, updatedResource);
 		
 		// A Group sent without members changes the cohort and leaves its members as they are: a client
 		// that edits the name must not empty the list, and FHIR JSON cannot tell "none" from "absent".

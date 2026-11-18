@@ -59,9 +59,11 @@ import org.openmrs.User;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.cohort.CohortAttribute;
+import org.openmrs.module.cohort.CohortAttributeType;
 import org.openmrs.module.cohort.CohortM;
 import org.openmrs.module.cohort.CohortMember;
 import org.openmrs.module.cohort.CohortType;
+import org.openmrs.module.cohort.api.CohortService;
 import org.openmrs.module.cohort.api.CohortTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -86,6 +88,9 @@ public class GroupCohortMapper {
 	@Autowired
 	private CohortTypeService cohortTypeService;
 	
+	@Autowired
+	private CohortService cohortService;
+	
 	public void setPatientService(PatientService patientService) {
 		this.patientService = patientService;
 	}
@@ -96,6 +101,10 @@ public class GroupCohortMapper {
 	
 	public void setCohortTypeService(CohortTypeService cohortTypeService) {
 		this.cohortTypeService = cohortTypeService;
+	}
+	
+	public void setCohortService(CohortService cohortService) {
+		this.cohortService = cohortService;
 	}
 	
 	/**
@@ -139,6 +148,52 @@ public class GroupCohortMapper {
 			}
 		}
 		return cohort;
+	}
+	
+	/**
+	 * Sets the attributes the Group lists (one extension per attribute, with the {@code type} name and the
+	 * {@code value} as text) on the saved {@code cohort}. An attribute the Group does not list is left as it
+	 * is; one listed with an empty value is voided. An unknown type: 422.
+	 */
+	public void applyAttributes(CohortM cohort, Group group) {
+		for (Extension extension : group.getExtensionsByUrl(GROUP_ATTRIBUTE_EXTENSION_URL)) {
+			String typeName = textOf(extension.getExtensionByUrl("type"));
+			if (typeName == null) {
+				throw new InvalidRequestException("An attribute of the Group needs a type");
+			}
+			CohortAttributeType type = cohortService.getCohortAttributeTypeByName(typeName);
+			if (type == null) {
+				throw new UnprocessableEntityException("Unknown attribute type " + typeName);
+			}
+			String value = textOf(extension.getExtensionByUrl("value"));
+			CohortAttribute current = activeAttributeOf(cohort, type);
+			if (value == null || value.isEmpty()) {
+				if (current != null) {
+					cohortService.voidCohortAttribute(current, "Removed through FHIR");
+				}
+				continue;
+			}
+			if (current == null) {
+				current = new CohortAttribute();
+				current.setAttributeType(type);
+				cohort.addAttribute(current);
+			}
+			current.setValueReferenceInternal(value);
+			cohortService.saveCohortAttribute(current);
+		}
+	}
+	
+	private static CohortAttribute activeAttributeOf(CohortM cohort, CohortAttributeType type) {
+		for (CohortAttribute attribute : cohort.getActiveAttributes()) {
+			if (attribute.getAttributeType() != null && type.getName().equals(attribute.getAttributeType().getName())) {
+				return attribute;
+			}
+		}
+		return null;
+	}
+	
+	private static String textOf(Extension extension) {
+		return extension != null && extension.hasValue() ? extension.getValue().primitiveValue() : null;
 	}
 	
 	/** The members the Group names, by patient uuid, in the order given. */
@@ -216,8 +271,8 @@ public class GroupCohortMapper {
 	/**
 	 * Adds what the Group does not say by itself and a client needs to show the cohort: where it
 	 * is, of which type, who created and last changed it and when, and the cohort module's own
-	 * attributes. Everything is read only: {@link #toCohort} ignores these extensions when a Group
-	 * is written.
+	 * attributes. {@link #toCohort} ignores these extensions when a Group is written; the attributes
+	 * are written by {@link #applyAttributes}.
 	 * <p>
 	 * The creator is not repeated here: FHIR2 already sets it as {@code Group.managingEntity}.
 	 */

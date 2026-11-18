@@ -34,10 +34,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Date;
 import java.util.List;
 
+import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Group;
@@ -52,6 +59,7 @@ import org.openmrs.module.cohort.CohortAttribute;
 import org.openmrs.module.cohort.CohortAttributeType;
 import org.openmrs.module.cohort.CohortM;
 import org.openmrs.module.cohort.CohortType;
+import org.openmrs.module.cohort.api.CohortService;
 import org.openmrs.module.fhir2extension.FhirConstants;
 
 public class GroupCohortMapperTest {
@@ -137,6 +145,67 @@ public class GroupCohortMapperTest {
 		Group group = mapper.withDetails(mapper.withDetails(new Group(), cohort), cohort);
 		
 		assertThat(group.getExtensionsByUrl(FhirConstants.GROUP_ATTRIBUTE_EXTENSION_URL), hasSize(1));
+	}
+	
+	@Test
+	public void applyAttributes_shouldAddANewAttributeAndChangeAnExistingOne() {
+		CohortService service = mock(CohortService.class);
+		when(service.getCohortAttributeTypeByName("Funding")).thenReturn(attributeType("Funding"));
+		when(service.getCohortAttributeTypeByName("Cadence")).thenReturn(attributeType("Cadence"));
+		mapper.setCohortService(service);
+		CohortM cohort = new CohortM();
+		CohortAttribute old = attribute("Funding", "Ministry");
+		cohort.addAttribute(old);
+		Group group = new Group();
+		addAttribute(group, "Funding", "NGO");
+		addAttribute(group, "Cadence", "Weekly");
+		
+		mapper.applyAttributes(cohort, group);
+		
+		assertThat(old.getValueReference(), equalTo("NGO"));
+		assertThat(cohort.getActiveAttributes(), hasSize(2));
+		verify(service).saveCohortAttribute(old);
+	}
+	
+	@Test
+	public void applyAttributes_shouldVoidAnAttributeSentEmptyAndLeaveTheOthers() {
+		CohortService service = mock(CohortService.class);
+		when(service.getCohortAttributeTypeByName("Funding")).thenReturn(attributeType("Funding"));
+		mapper.setCohortService(service);
+		CohortM cohort = new CohortM();
+		CohortAttribute funding = attribute("Funding", "Ministry");
+		CohortAttribute other = attribute("Cadence", "Weekly");
+		cohort.addAttribute(funding);
+		cohort.addAttribute(other);
+		Group group = new Group();
+		addAttribute(group, "Funding", "");
+		
+		mapper.applyAttributes(cohort, group);
+		
+		verify(service).voidCohortAttribute(eq(funding), anyString());
+		verify(service, never()).voidCohortAttribute(eq(other), anyString());
+	}
+	
+	@Test(expected = UnprocessableEntityException.class)
+	public void applyAttributes_shouldRefuseAnUnknownType() {
+		mapper.setCohortService(mock(CohortService.class));
+		Group group = new Group();
+		addAttribute(group, "Nothing", "x");
+		
+		mapper.applyAttributes(new CohortM(), group);
+	}
+	
+	private static void addAttribute(Group group, String type, String value) {
+		Extension extension = group.addExtension();
+		extension.setUrl(FhirConstants.GROUP_ATTRIBUTE_EXTENSION_URL);
+		extension.addExtension().setUrl("type").setValue(new StringType(type));
+		extension.addExtension().setUrl("value").setValue(new StringType(value));
+	}
+	
+	private static CohortAttributeType attributeType(String name) {
+		CohortAttributeType type = new CohortAttributeType();
+		type.setName(name);
+		return type;
 	}
 	
 	private static CohortAttribute attribute(String typeName, String value) {
